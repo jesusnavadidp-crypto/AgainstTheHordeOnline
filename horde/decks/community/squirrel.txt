@@ -1,0 +1,43 @@
+// Squirrel by PiouPiou, from https://against-the-horde.com/deck/v9PWVvJuL2pdpqsdUGbs
+## Horde Deck ##
+3 VMA creature - Deranged Hermit b9cd714b-2ad8-4fdb-a8aa-82b17730e071 c25df202-0dd4-448d-8cb3-11fd7df0d505
+1 UST creature - Earl of Squirrel edc4d1fb-f482-4f2b-985e-1e4d5941e574 c3bbf567-bdb4-4f88-906c-eb1503c02d9f
+4 SLD creature - Krosan Beast 042a665d-2f63-4f7e-ac89-0d560da68085 47ea2f2d-14ca-4b57-b973-5ce7db35bebf
+4 DMR creature - Nut Collector 4e1bc03c-e131-4422-beba-0a45a26fdf43 b61af26f-bab1-412d-8849-0d7c3c304950
+4 SLD creature - Squirrel Mob 451486df-6160-4ff7-b47c-dd3760417a31 ff276249-e7ca-4264-9039-d32b38cc4a7e
+1 MH2 creature - Squirrel Sovereign f43d1ea5-8127-4b64-a87b-ee5cc9b9e9fa 8f739d55-30d6-4879-872a-82c6778113de
+1 KHM creature - Toski, Bearer of Secrets a8e707ec-ce77-4bc5-8c76-5ea3e81e8c7f 08eb31f3-7686-4d6b-a0e4-5d6ece6fba82
+
+3 NCC enchantment - Beastmaster Ascension 11b5308d-5bc0-4782-875f-a28be36e665d f404d133-fc1a-4751-ac72-554e6553e486
+1 C17 artifact - Door of Destinies 9b6d3dcf-aa5a-4516-bd48-a0723e86bfd1 75fd3fea-158a-4575-84a8-879ee9404242
+1 2XM enchantment - Doubling Season 01546b7d-a233-4176-8843-d732074dc5b6 8676d164-c76e-402b-a649-6ded3f549b6e
+2 TSR enchantment - Muraganda Petroglyphs e6eff050-f1f6-49ce-a92e-1d1e13e51084 b103cb22-93b2-4206-9f80-5f966155e07e
+1 MH2 enchantment - Sylvan Anthem 5ab5eefd-47bf-4cdf-bc29-b517e4f6adc0 a119edc2-9e0f-43d1-a13d-25827f86e3e3
+
+2 TOR sorcery -f Acorn Harvest 6aeba615-2d37-4eb8-a377-41a517e95aa3 32987720-cc0c-416b-b79b-217d3b37542d
+2 SLD sorcery -f Chatter of the Squirrel b0aaa4b1-5188-43a6-997d-7a9b2ad452bc a320d7e7-aa1e-4c00-9b45-525352393e00
+1 M21 instant - Heroic Intervention 24882fa2-3fe9-4c1b-aa3d-0e6488b9db27 cf9fb88e-d13d-46d0-a3c5-da886f43ffb9
+2 CMA sorcery - Overrun 204f9afe-c20b-4933-b5cd-aa572784762a 64033221-447f-4f8a-8fa0-c3ef30172602
+2 TOR sorcery -f Parallel Evolution 963cfdbe-775c-4267-a617-66f10e9d7f4f 73cce010-a8e7-477b-9179-bbad38aa6438
+2 M13 sorcery - Predatory Rampage ee6d271c-0728-4080-85bb-a6af05f8b213 3e054ea5-3657-4198-9715-6acc0e362da3
+1 C19 instant - Second Harvest 61a6341e-0d36-44b6-8026-9c87c8ef61cb 22b01c98-c24b-4255-921f-4820f3d395ea
+1 NCC sorcery - Shamanic Revelation d1d171de-1c6d-4fb9-817a-9c689c709f3d b3784eff-ab7b-4fd4-9a07-fbc852d116bf
+1 PCY instant - Vitalizing Wind 98b802f3-4785-41af-adfe-e77d0ae4648c 0fbd7c20-d527-4d97-9630-896d5e7bf1de
+
+60 SLD token - Squirrel 67f21c0c-2083-4eda-9dc3-cc8aee42289f e2311cf5-ab73-48d6-9fa0-54c19a7ae98f
+
+## Too Strong ##
+1 VMA creature - Deranged Hermit b9cd714b-2ad8-4fdb-a8aa-82b17730e071 c25df202-0dd4-448d-8cb3-11fd7df0d505
+1 KHM creature - Toski, Bearer of Secrets a8e707ec-ce77-4bc5-8c76-5ea3e81e8c7f 08eb31f3-7686-4d6b-a0e4-5d6ece6fba82
+1 NCC enchantment - Beastmaster Ascension 11b5308d-5bc0-4782-875f-a28be36e665d f404d133-fc1a-4751-ac72-554e6553e486
+1 PCY instant - Vitalizing Wind 98b802f3-4785-41af-adfe-e77d0ae4648c 0fbd7c20-d527-4d97-9630-896d5e7bf1de
+1 TOR sorcery -f Parallel Evolution 963cfdbe-775c-4267-a617-66f10e9d7f4f 73cce010-a8e7-477b-9179-bbad38aa6438
+1 M13 sorcery - Predatory Rampage ee6d271c-0728-4080-85bb-a6af05f8b213 3e054ea5-3657-4198-9715-6acc0e362da3
+
+## Available Tokens ##
+
+## Weak Permanents ##
+
+## Powerfull Permanents ##
+1 UST creature - Earl of Squirrel edc4d1fb-f482-4f2b-985e-1e4d5941e574 c3bbf567-bdb4-4f88-906c-eb1503c02d9f
+1 KHM creature - Toski, Bearer of Secrets a8e707ec-ce77-4bc5-8c76-5ea3e81e8c7f 08eb31f3-7686-4d6b-a0e4-5d6ece6fba82

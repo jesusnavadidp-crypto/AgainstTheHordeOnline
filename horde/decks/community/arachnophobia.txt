@@ -1,0 +1,70 @@
+// Arachnophobia by Gabriel, from https://against-the-horde.com/deck/SdTpCh9wU9YUs3bLmV5A
+## Horde Deck ##
+1 DMU creature -e Llanowar Greenwidow 57920afe-61b7-4db1-ad79-dca4f0bc281b 81f90e4d-f60f-4175-830f-c2ce04c5a945
+1 2X2 creature -e Arachnus Spinner 8fea91ee-5849-4c46-8198-fd383d9a55e8 a782fbd4-36fe-4da7-a73f-20d533de8960
+1 CMM creature -e Arasta of the Endless Web 695eea46-1535-48c5-bbb6-0b8379e77bfc 03b9304c-9993-4539-9165-48568eb81db1
+1 RTR creature -e Archweaver 2ceb76e2-1692-48fc-ab20-9587d1374172 f99dc8ff-932c-4d56-9253-99ce9e145306
+1 STX creature -e Blex, Vexing Pest // Search for Blex b2c53124-e422-4786-8135-67c350d71a36 930d3b70-7e8e-4a39-b60d-7d14196912e0
+1 MBS creature -e Blightwidow 282003f4-862a-4f80-8f45-e470fc0fe2fe db45c616-ea32-4e7e-86bf-84fb1e95dc7f
+1 OTJ creature -e Cactarantula 18a5fe34-0c97-486c-b09a-80535a99e982 2e0e27f9-dc2c-4366-b810-3e8d0bdff8c3
+1 THB creature -e Chainweb Aracnir c45423ad-1920-46f7-bcc1-ecade5880821 874afaad-546a-4cb2-ad01-2b4a4862b219
+1 CMM creature -e Deadly Recluse 6b941291-1802-4ced-9869-39fa43825550 d432d17e-052b-4a81-bad8-14babf6e593f
+1 PCA creature -e Dragonlair Spider f17d3aa4-6e88-4973-b2a4-942098a1c463 7ebddcdb-9bcb-4355-9bcf-232608fb678e
+1 AFR creature -e Drider 1db76752-31ed-4a16-986a-d0852ba7d812 bbc06a88-1eb6-4edb-8f03-d8274560cc41
+1 KHM creature -e Gnottvold Recluse e7e65cc5-9ceb-43b6-acde-ae492b71daf6 af46c8c8-5dfa-4ebb-b0b9-cd25d01dd432
+1 RAV creature -e Goliath Spider 17415789-159e-43cf-93f8-9926405ee8f1 cecc53b1-942e-4b44-bf93-dd2d8cc92d6d
+1 BRO creature -e Hoarding Recluse 5fc09704-56cf-4e47-bd96-27ac34434941 6559afec-6bb8-4501-8805-4eb108443048
+1 YMID creature -e Ishkanah, Broodmother c9be8101-899a-495c-8130-ccfef072455e f902584a-2cf3-4843-b0be-2ead4fe16c38
+1 DSC creature -e Ishkanah, Grafwidow 6f4861f4-1b3b-4dbc-b55b-196075d0a693 2a61bad1-f212-4d9b-8422-8ec548b8155c
+1 ALA creature -e Jungle Weaver a585186c-d7c2-4f8b-acdc-c5f9ab950398 5f46870b-3d8d-4aae-8d59-6bd88a50b37c
+1 SHM creature -e Juvenile Gloomwidow d2546d25-07cd-4830-ba66-34bdbf8a245c d7f323d5-f26c-46e9-9d6a-be5c254fe8b6
+1 DKA creature -e Kessig Recluse 61c3b999-4f5d-4018-a9ee-ef894fd1ef6c 695b8abe-796e-4d9b-aad3-4e03e925d2a7
+1 LTR creature -e Mirkwood Spider 07fb2903-b239-43d0-864b-c4437b7a5230 94333bbf-3945-4f4c-858e-f1ca3f254079
+1 HOU creature -e Obelisk Spider f7289e62-ce5e-4f11-8d64-9fb62531b578 e0b62c2f-566c-47fb-a2ad-da375da98598
+1 ARC creature -e Pale Recluse 488ca652-653b-4bb3-891c-874efdd418ff fb045233-af6c-4d1e-b17b-ff779aeb7d5f
+1 MOM creature -e Ruins Recluse d99efecd-1419-434b-9de6-5fbb04f57dda c0c0fdf5-2f56-4480-9ccb-84471b3e5331
+1 CMR creature -e Sentinel Spider a37c9b13-dc45-4b55-a63d-5314abde7aab 01e7af76-e505-49ca-a91e-8167027560ff
+1 LTR creature -e Shelob, Child of Ungoliant 8372115d-c963-4a41-8759-72f7f6a8935a 43d427a8-a237-4053-b90d-0f1dd249e9c1
+1 LTC creature -e Shelob, Dread Weaver 7eade76f-92e4-4d26-9eb8-d3d954845c04 f74e4af3-abc8-458f-882b-d679f706cd43
+1 BRO creature -e Skyfisher Spider 67158085-4807-4f0e-8599-c55ec7ec252e e18927dd-c50c-4fb2-8d4c-d0f853b68294
+1 CMM creature -e Skysnare Spider b820c29e-2428-4074-a024-9502848484d6 ff737c53-9489-4a8c-8fa1-5d108222ae3f
+1 M21 creature -e Sporeweb Weaver 2e7c3881-6fa6-4fd2-ae86-9e3a0fcecdbd 7f297c91-a31f-4e60-adc6-731e73b86e7c
+1 CMR creature -e Stingerfling Spider 056770e2-8ab7-424d-a2d8-7be6d6cc73f1 9596be71-290a-4955-aa34-dcffa9422664
+1 C18 creature -e Thantis, the Warweaver be543388-1e4f-412f-8f3b-dd826fd8e03d 91c54ac0-0edc-406f-8a22-f2996f604f36
+1 DSK creature -e The Swarmweaver 50120e90-2fdf-43c1-93e2-2230ee4e63fc f4542e4f-2fb7-4036-aefc-291f5c010ca8
+1 FDN creature -e Treetop Snarespinner 2f57a220-9f64-4143-979a-d6aaf63d49b2 88e68fa3-159d-49a6-8ac6-afc9bd6f1718
+1 DSK creature -e Twitching Doll fd6e1967-237a-41f6-bbf4-2c869f9447c8 23684053-024e-4e15-8aec-de3d4bc7f126
+
+1 2X2 enchantment -e Arachnus Web 8b25f353-0798-4a03-a928-6a701a919468 ec348d8d-6b49-4a40-a668-fc6dd2af4f0d
+1 MIC enchantment -e Curse of Clinging Webs d063f1d4-eb6b-40fa-97b7-f15ea53397fb ff363cfe-cc69-44fb-ba61-fcb4a8bceb66
+
+1 AVR instant -e Eaten by Spiders d4c04cec-3a0d-4e86-95ed-8d367fe7220d 0efea1b1-f212-4b97-98dd-922f85ab191f
+1 SHM instant -e Gloomwidow's Feast 3ceae65e-938d-4e76-b3f6-7be70232549e 59b989b4-692c-4ccb-a290-0ff00abacba9
+1 WOE sorcery -e Spider Food 38eabfea-5ea5-4baa-8ad6-7a7cb00e1fed b9fd720b-e9c2-4e82-917e-bab6c544afb0
+1 INR sorcery -f Spider Spawning da113cc9-bb2b-4af4-9c43-32c165b87363 7813d04e-98f5-49cc-832d-ce3fea4b3798
+
+60 TDSK token -e Spider 0c60a894-a724-4653-8f94-ff150466b1de 4f8852eb-1318-40c2-aa2a-8c0e830cca71
+
+## Too Strong ##
+1 PCA creature -e Dragonlair Spider f17d3aa4-6e88-4973-b2a4-942098a1c463 7ebddcdb-9bcb-4355-9bcf-232608fb678e
+1 AVR instant -e Eaten by Spiders d4c04cec-3a0d-4e86-95ed-8d367fe7220d 0efea1b1-f212-4b97-98dd-922f85ab191f
+1 SHM instant -e Gloomwidow's Feast 3ceae65e-938d-4e76-b3f6-7be70232549e 59b989b4-692c-4ccb-a290-0ff00abacba9
+1 LTR creature -e Shelob, Child of Ungoliant 8372115d-c963-4a41-8759-72f7f6a8935a 43d427a8-a237-4053-b90d-0f1dd249e9c1
+1 WOE sorcery -e Spider Food 38eabfea-5ea5-4baa-8ad6-7a7cb00e1fed b9fd720b-e9c2-4e82-917e-bab6c544afb0
+1 INR sorcery -f Spider Spawning da113cc9-bb2b-4af4-9c43-32c165b87363 7813d04e-98f5-49cc-832d-ce3fea4b3798
+1 C18 creature -e Thantis, the Warweaver be543388-1e4f-412f-8f3b-dd826fd8e03d 91c54ac0-0edc-406f-8a22-f2996f604f36
+1 DSK creature -e The Swarmweaver 50120e90-2fdf-43c1-93e2-2230ee4e63fc f4542e4f-2fb7-4036-aefc-291f5c010ca8
+
+## Available Tokens ##
+5 TFDN token -e Insect ff591c1f-732b-432d-b458-4f19c8f707c5 59c2cbd7-79bb-4d93-b2b6-5d3abe88a012
+5 TM3C token -e Saproling 2b7dba01-b08c-4218-9fc1-da55559d9155 f38381fd-e368-46b2-94e9-89c9b182435d
+5 TAFR token -e Spider 3e6a1c13-16f0-4256-b468-1f537de78629 124e0b03-d9fb-44f1-9e3c-3462aabdd42e
+5 TINR token -e Spider bd386399-69f0-4653-96a1-fd05b8fd148c 362fb82b-d1ea-471f-be0a-cc2c0c600fd1
+10 TMKM token -e Spider 2e78052f-0e97-4013-bdd4-12802f8bc758 74cb3ba3-9a14-4d72-bf24-0b75ae747f96
+5 TJOU token -e Spider 10f7232b-3b49-4d4c-adea-8bdeb118d08a 7a0275af-708d-4c43-b226-c88cb9a8054c
+5 TTSR token -e Spider c16b3a1e-0e60-41f2-899e-d22bcf1144ae 96e8f429-5a66-4bcd-8a1f-69f9b79c0f5b
+5 TINR token -e Spider bd386399-69f0-4653-96a1-fd05b8fd148c ce90c48f-74fb-4e87-9e46-7f8c3d79cbb0
+
+## Weak Permanents ##
+
+## Powerfull Permanents ##

@@ -1,0 +1,55 @@
+// Walls by Hoken, from https://against-the-horde.com/deck/ijArKXEP6F80JM94GWFf
+## Horde Deck ##
+1 M19 creature -e Arcades, the Strategist e7fc5ad6-f2f0-4b06-a61b-05022db9d93b 1e90c638-d4b2-4243-bbc4-1cc10516c40f
+1 TDM creature -e Betor, Kin to All 826a0db6-195a-4697-9bd6-f544b279e3cf f1969dec-4d6b-493a-8233-76faf8fa3cea
+1 TDC creature -e Canopy Gargantuan ec1e69b1-f664-494b-8da2-c7199872b08b eff14137-cf19-4b57-a760-3ae8191b0fe4
+2 FDN creature -ed Crystal Barricade 291c7abf-9d64-4ba0-ae21-e3459edc9a95 e3c62996-3dc9-4f1a-8979-790b9b6b134e
+1 ECL creature -e Doran, Besieged by Time dd35a377-0865-4b25-bd0f-aaead29a9f0e 9f0a1644-58bb-4826-9832-0ffc372fac1e
+1 TDC creature -e Felothar the Steadfast 2b3f791a-d672-46fb-a03a-96e19f2c3121 2c3549f6-25df-4ea7-84ad-922ccd4af6b2
+2 TLA creature -ed Fire Navy Trebuchet 1f018a8c-6ceb-4d03-94a7-8713467c9cf5 e58372cc-9a89-47a4-a0db-df5435e26cd3
+2 EMA creature -ed Glacial Wall 7fcf8faa-2c93-4dc8-aa56-6fc40340e212 c059330e-1aef-4d22-b3c2-cd84cab5fe38
+2 IMA creature -ed Jungle Barrier dcf65293-14a0-46a5-a0b0-ca2b7fda8bef a8097e6e-c04e-4266-a8f4-07e5fb0638d4
+2 ROE creature -ed Stalwart Shield-Bearers 55aafc25-76c5-4621-941b-754bd8f13e64 868256bb-d4e2-42eb-a43a-360148aec06f
+1 MKM creature -ed The Pride of Hull Clade bbd7b756-bbee-451e-9446-06019791cb36 99027565-f009-48d6-a7d0-fec1afff0611
+1 TLA creature -ed The Walls of Ba Sing Se af7d7da5-aff5-48e1-901a-f81257a85f71 086b6003-6d90-426b-809e-ea837d868290
+1 TDC creature -e Towering Titan a95309ac-f920-474d-81b5-0f68c8a54f34 2f75be32-0e5a-4d4f-93b4-149892df381c
+1 INR creature -ed Tree of Perdition 0cdece2a-0bdf-4e6d-9ddc-4a8d58b2ec29 305bd19a-ae5e-46ca-8ff7-27810c968315
+1 TDC creature -ed Tree of Redemption 1372dd15-cdb9-470c-b3e8-3423697e46e8 4f55dae2-e6b4-4498-8abd-86d9717691f4
+2 TDC creature -ed Wall of Blossoms ef4d5fb3-70a3-433d-a9d3-18b2beb8d79f df901113-e273-4fe0-a264-8e9e26e70905
+2 CMM creature -ed Wall of Denial 9cc092f9-e8f0-40ea-847d-813b70f889db 049ce45b-ab07-4bce-bb4a-83f5720b6ee7
+2 TDC creature -ed Wall of Omens 5f601f48-d24b-4883-9fde-b3f620e7c9ea 3d134bb2-17ec-4e65-976e-f06fa983f3fb
+2 M21 creature -ed Warded Battlements 7616dacf-44e2-4b03-b120-875cc2e50ea5 f234999b-54e9-40f5-a537-7d6ce169c710
+2 TDC creature -ed Weathered Sentinels 0903b941-82f1-4d3e-9717-29ab7d0c8cef 41e1cf4c-fa52-4cec-a040-2794326e01de
+1 TDC creature -ed Wingmantle Chaplain 99e24041-910e-4ae2-a55b-b938d752eeff 9ab1ed2c-f248-4d2a-a0c3-6c7763f71a93
+
+2 TDC enchantment -e Ghostly Prison e828b189-0e8f-43b8-b909-4c23e742e028 f66cce50-ce75-4fa4-9d2d-85694e5938cf
+2 RNA enchantment -e High Alert 5f657279-cc0f-4431-b517-47bd1c7109b6 ce124f6e-ef0c-4d01-a876-e34d3e445108
+1 TDC enchantment -e Jaws of Defeat 46327e52-b04a-4155-bda6-9559e46fb9ed 91db532f-6781-4240-9337-315efb54d631
+2 OTC enchantment -e Propaganda ea9709b6-4c37-4d5a-b04d-cd4c42e4f9dd 923c8a2b-dbba-423d-8f86-7c5ec184bfcf
+
+2 TDC sorcery -e Expel the Interlopers 744b7e93-c893-4770-a3bb-6a45b7f8e4f7 bbdf088c-3067-4df2-92f7-95fed5b304b8
+
+3 TAKH token -e Aven Wind Guide 57a8745a-5dd3-45f5-9f22-3b68d8d60618 a8f339c6-2c0d-4631-849b-44d4360b5131
+10 TFIC token -e Bird 4038cf0b-eb9b-4251-b4f1-da1e35700b07 023cebe4-ebe4-4398-9fd7-d3507660040a
+16 TXLN token -ed Plant 639d5f0d-d0ea-49bf-9075-12252315601e 642d1d93-22d0-43f9-8691-6790876185a0
+5 TRVR token -e Sphinx 814c8e0b-694e-4b65-a0b6-518ac005b218 c8651719-b875-48ce-b68b-ac7c0713ddf8
+6 TCMM token -ed Wall 3a4be250-dfef-46c4-b3f1-6e817e26eb97 d08e421a-49ef-448c-9e04-9c5a7e5c071c
+10 TTHB token -ed Wall a6108a42-15fd-4e24-80d0-eadd19bc9afc dbdd5d53-65e7-42c3-a325-791f11335e62
+10 TWAR token -ed Wall 445f23a7-2a2a-4fa5-9810-560501e08748 e8ae8c31-70cb-44e1-a105-f4d29f1f9356
+
+## Too Strong ##
+1 TDC creature -e Canopy Gargantuan ec1e69b1-f664-494b-8da2-c7199872b08b eff14137-cf19-4b57-a760-3ae8191b0fe4
+1 TDC sorcery -e Expel the Interlopers 744b7e93-c893-4770-a3bb-6a45b7f8e4f7 bbdf088c-3067-4df2-92f7-95fed5b304b8
+
+## Available Tokens ##
+1 TTLA token -e Ballistic Boulder ba138dd6-6eab-4f97-92b0-ca47d0042216 0b1b8ff0-0b1e-4a55-a937-fde7ec15c41a
+1 TRVR token -e Bird b1a2b096-a440-4ef9-ab2a-059c79999297 6105623a-ff2c-46bf-8881-e8b899d47d54
+1 TTDC token -ed Wall 8b1d2b81-dc1f-402a-879f-529f4969a859 9b154f90-cc26-4e45-b751-854e2017cd40
+
+## Weak Permanents ##
+
+## Powerfull Permanents ##
+1 TDC sorcery -e Expel the Interlopers 744b7e93-c893-4770-a3bb-6a45b7f8e4f7 bbdf088c-3067-4df2-92f7-95fed5b304b8
+1 RNA enchantment -e High Alert 5f657279-cc0f-4431-b517-47bd1c7109b6 ce124f6e-ef0c-4d01-a876-e34d3e445108
+1 TLA creature -ed The Walls of Ba Sing Se af7d7da5-aff5-48e1-901a-f81257a85f71 24a14ac5-0b7e-4441-9963-782a7cda3f4a
+1 VMA sorcery -e Timetwister c823e687-6311-4c99-974b-fd77d204141a fbee1e10-0b8c-44ea-b0e5-44cdd0bfcd76

@@ -1,0 +1,43 @@
+// The Fire Nation by Fondant, from https://against-the-horde.com/deck/lEtcm1b55AGVZWF7DhPc
+## Horde Deck ##
+1 TLA creature -e Azula, On the Hunt 89f96032-5cba-404d-82b0-38d2be963e4b 1335a145-248a-4f1e-8760-9a5d531e14e3
+1 TLA creature -e Buzzard-Wasp Colony 29fd050c-dd1d-4e1b-b3cc-f7d8d18e4dcb 42d83229-0555-4361-8964-4b525c825843
+10 TLA creature -e Callous Inspector 5d950fd4-8956-4b1a-ab0f-ab31bcffce4e f22610e9-6b14-4914-bb67-bd6723bec9aa
+1 TLA creature -e Cruel Administrator 24a691f3-88dc-47a5-b5cd-e02bb8026470 9d70707b-2e25-40b1-80a8-9a5492bca7e2
+1 TLA creature -e Fire Nation Cadets 5ebfa3f5-f80a-4845-bba7-75c4ddb88682 1a3a862c-9c9a-41cd-94d1-2d0cff22a6cd
+3 TLA creature -ed Fire Navy Trebuchet 1f018a8c-6ceb-4d03-94a7-8713467c9cf5 e58372cc-9a89-47a4-a0db-df5435e26cd3
+1 TLA creature -e Fire Sages 08d1940a-ddc6-4b6d-b6c9-9d2aa470b906 71a9fa44-306f-417a-a9d9-991aff95025c
+1 TLA creature -e June, Bounty Hunter 1779869a-5e54-4ab5-86b8-d4d20e2e1ba4 148bbaab-bc7b-46ab-8e18-ade69d71d847
+1 TLA creature -e Mai, Jaded Edge b5029f21-e0d6-4f22-9afd-79452de26490 732e6bc9-0798-4c00-aea0-5ef4298b45f5
+1 TLA creature -e Merchant of Many Hats 23820b45-2f3a-4b6e-99ea-d84caccb7e37 752ffa24-93b6-4b33-bf10-7222357ac472
+1 TLA creature -e Rough Rhino Cavalry 3ac94b28-4b0a-4121-99b9-9cd7dff7948c a8bc29cf-f6f8-4bb8-b722-f016b58b6d2d
+1 TLA creature -e The Rise of Sozin // Fire Lord Sozin 9b0b217d-cc9d-4187-89cb-f13160ed2983 14eadf46-90c2-4376-8183-6a922a60174d
+1 TLA creature -e Vindictive Warden 43b339ec-4d7d-41ac-a5ab-96c6a6de00e2 0f34de05-39a9-425f-a3b4-3a9d46c917ac
+1 TLA creature -e Yuyan Archers 63e5180f-16d0-4524-94bf-ecbf3c417814 99244462-a996-4a5b-91fb-947045647d6d
+1 TLA creature -e Zhao, Ruthless Admiral d6b0198a-c1f2-4142-b5e2-8205adf14d0a 3fd48a57-b0bb-4177-a0f3-bd317a179cbe
+1 TLA creature -e Zuko, Exiled Prince 3231ce2e-d4f8-44fc-872d-aeafa59aed4b 6a73b372-9c0e-4a85-89d2-440163330687
+1 TLE creature -e Zuko, Seeking Honor 6e737c52-cbe0-493f-ae46-7bf068e04882 365fa3f6-a210-4342-9413-fcb7812ff4f4
+
+3 TLA artifact -e Fire Nation Warship 987aab63-a889-400f-a3bd-feaef978b407 41ecc1de-353e-4131-b735-d2ce18c9c2d5
+1 TLA artifact -e Phoenix Fleet Airship 6ffe71c0-acb5-4ba9-8c2f-719330e1ea69 b51d3259-c41c-4f64-9666-0a9e676c812f
+1 TLA artifact -e The Fire Nation Drill 3d4b9d71-4275-4c18-a4dc-9aad234eb92c 54d762f6-e131-480f-b294-10f5a63d9c98
+3 TLA artifact -e War Balloon 021b495d-236f-4274-988d-2dfd7103c9ef 6829b20d-c2fa-41a6-89ca-f21c522d8866
+
+2 TLA instant -f Fire Nation Attacks 399fba23-fc13-440b-ab67-192eede6ecab 9cc10845-8989-46ca-a57a-fd728fca0729
+1 TLE instant -e Overwhelming Victory 20d94561-7526-4305-8d2d-7daf62729ff4 498b0bff-28f2-458f-844b-13814cfa8b14
+1 TLA sorcery -e Sozin's Comet bc0da02c-2b85-4ddc-9ce0-63934dd14164 649e50e5-299b-4191-87a8-36e9378795be
+
+30 TTLA token -e Soldier 768c67a6-a6d0-4001-a252-72ae24b2829e 2de43b03-9ac5-4292-ab29-2dc6210ef3d9
+30 TTLE token -e Soldier c269bceb-0908-474c-825a-8bc4d138b3d1 83313791-7d33-42bf-8ee7-05f17f88940a
+
+## Too Strong ##
+1 TLA creature -e The Rise of Sozin // Fire Lord Sozin 9b0b217d-cc9d-4187-89cb-f13160ed2983 14eadf46-90c2-4376-8183-6a922a60174d
+1 TLA creature -e Zuko, Exiled Prince 3231ce2e-d4f8-44fc-872d-aeafa59aed4b 6a73b372-9c0e-4a85-89d2-440163330687
+
+## Available Tokens ##
+1 TTLA token -e Ballistic Boulder ba138dd6-6eab-4f97-92b0-ca47d0042216 0b1b8ff0-0b1e-4a55-a937-fde7ec15c41a
+1 TTLA token -e Clue 496e1083-c792-40a4-adf4-fec1d559cd5e 4c9669e6-e093-4f88-9699-a1a32793bfa9
+
+## Weak Permanents ##
+
+## Powerfull Permanents ##

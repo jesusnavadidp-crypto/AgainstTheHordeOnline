@@ -41,6 +41,7 @@ Free-tier notes: the server sleeps after 15 minutes with no one playing and take
 - **Card actions:** click any card for a menu (tap, counters, destroy, exile, hand, library top or bottom). You can also drag a card onto a pile, the hand or the battlefield. Shift-drag moves a whole stack.
 - **Tokens:** identical tokens collapse into stacks with counts. Menu actions apply to N of a stack. The Tokens drawer adds the deck's tokens, suggests tokens that cards in play create, and can search any token on Scryfall.
 - **Your own deck:** each Survivor can bring a deck from a Moxfield or Archidekt link, or as a pasted list (Arena, MTGO or any site's text export). You get your own library, hand (hidden from others), battlefield, graveyard, exile and command zone, start with 7 cards, and untap and draw automatically each turn. Pick which of your creatures blocks each attacker; deaths, deathtouch, infect/wither counters, first strike and trample are worked out for you. Mark creatures to attack and their damage mills the Horde. Decks can be saved for next time.
+- **Community Hordes:** nine more Horde decks from against-the-horde.com: Ooze Horde (Zayn Harris), The Fire Nation (Fondant), Arachnophobia (Gabriel), Merfolk, Squirrel and Rats - Plague Avatar (PiouPiou), Sleep with the Fishes (Jay), Walls (Hoken) and Now that's a lot of gobbo (Lady Stardust). Each links back to its original page. Image-only custom cards from the originals aren't included.
 - **Saved Hordes:** name a custom Horde list and it stays on the setup screen.
 - **Online rooms:** everyone sees and controls the same table live, with all animations. The log shows who did what, undo works for the whole room, and refreshing puts you back in your seat. Rooms survive a server restart and expire after 12 hours with nobody connected.
 - **Other:** hover to zoom, graveyard/exile/library viewers, undo (Ctrl+Z), game log, autosave (offline), and Space as the main action.
@@ -58,4 +59,4 @@ Free-tier notes: the server sleeps after 15 minutes with no one playing and take
 
 Unofficial Fan Content permitted under the Fan Content Policy. Not approved/endorsed by Wizards.
 
-The Horde deck lists in `horde/decks/` come from against-the-horde.com (decks by Peter Knudson and TenkayCrit). They belong to their authors and are not covered by this repository's license.
+The Horde deck lists in `horde/decks/` come from against-the-horde.com (decks by Peter Knudson and TenkayCrit; community decks in `horde/decks/community/` by the authors named above and in each file). They belong to their authors and are not covered by this repository's license.

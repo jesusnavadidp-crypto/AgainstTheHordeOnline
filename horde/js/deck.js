@@ -1,3 +1,4 @@
+import { COMMUNITY } from './community.js?v=9';
 // Deck definitions + parsing + library building.
 // Deck .txt files use the against-the-horde.com format:
 //   <count> <set> <type> <flag> <name...> <oracle_id> <scryfall_id>
@@ -26,6 +27,9 @@ export const DECKS = [
     intro: 'A modified version of the Eldrazi Horror deck by TenkayCrit.',
     rules: 'All tokens controlled by the Horde have haste. Eldrazi Spawn the Horde controls cannot attack or block. If the Horde controls 10 Eldrazi Spawn at the start of its precombat main phase, they are sacrificed, and the Horde casts the three Eldrazi titans from exile.' },
 ];
+
+// Community Hordes (see community.js) come after the official ones.
+DECKS.push(...COMMUNITY);
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 

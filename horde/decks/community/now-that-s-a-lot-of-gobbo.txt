@@ -1,0 +1,30 @@
+// Now that's a lot of gobbo by Lady Stardust, from https://against-the-horde.com/deck/7Zwih6AjoxLzQR2fSGCI
+## Horde Deck ##
+1 10E creature - Goblin King d236b3fc-0d3f-4d99-875d-e32a33fe5767 4b266935-25ea-49c5-a1da-57c22a4362fd
+4 M20 creature - Goblin Ringleader 4100e486-0d27-436c-8429-76bc2c1a26ab 6911af4e-4abd-4cf9-8a86-ae5d680c6f12
+2 AFR creature - Hobgoblin Bandit Lord 43fea418-db6f-4953-89d1-6873b2ca41a8 09e9dc36-f2d8-4384-98cb-e44c00b02433
+5 CMM creature - Krenko, Mob Boss 68418069-f615-40ef-ae0d-764192acae00 27141cae-3ca1-4a4f-933f-9608bbcf9bd9
+3 MOC creature - Krenko, Tin Street Kingpin e8065e1d-e937-4b56-8011-78f0d07328a0 2f5689e2-d8a2-442b-8027-f89686adcb67
+6 JMP creature - Muxus, Goblin Grandee 07c82cde-f00d-4454-9df4-9286e344c9bb 2c716d10-2130-43b7-a939-349d437e1091
+1 CMM creature - Purphoros, God of the Forge 4fdbbec2-e921-4b63-958d-f9ba1e417197 4736a2c4-c89c-48db-a104-6303e7e2eee8
+2 LCI creature - Roaming Throne 3640c29b-1534-4952-b297-619ade948431 32fd8b7c-baf3-4d3d-be6f-044a917b11a0
+3 DMU creature - Rundvelt Hordemaster 1e080c7d-102c-4d28-bcb9-62b36d400d13 ffee9dbe-af90-4e19-844d-4df1180f24c4
+
+1 MOM enchantment - City on Fire 41eec4e8-92d3-4f98-9346-3a3e3cc602ce 6f455cc1-a822-44ef-ba7c-bfcff69bd45e
+2 DDS artifact - Coat of Arms 5f7f133e-58ea-41ab-b1be-be4b400fac4c 513d4c36-6ad4-4ee9-b161-3136eb59504f
+1 M21 enchantment - Fiery Emancipation 52159875-354c-47f9-bb1c-cd65395fcc68 0b12e4b7-2c45-4795-94d3-901f89b8f290
+2 NEO artifact - Mirror Box 3bed1944-58dc-4679-9aee-7be4d94fb55c 4bf676a6-8ccb-4908-9e49-ccb4a319d588
+4 LCC enchantment - Shared Animosity a27445db-33f2-4571-98b5-83206b797484 299a807e-21cb-4b49-ad2b-c9ce7eef393a
+
+3 TSR sorcery - Empty the Warrens 3a59c882-8bb8-49ba-862f-125020dd5bec 06462b57-1b0e-4c9c-9531-c14b9f2d5a3b
+3 IKO sorcery - Ruinous Ultimatum a6f38908-aa4f-4f99-a28e-85d11dab52e4 50c1d6ca-7789-46b5-bc89-85cc3915cb85
+
+57 TCMM token - Goblin 4465eff4-5851-4721-a248-866c686c2ab8 419c1799-1525-44ec-9f6c-dfc290f04ba7
+
+## Too Strong ##
+
+## Available Tokens ##
+
+## Weak Permanents ##
+
+## Powerfull Permanents ##

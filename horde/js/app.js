@@ -1,10 +1,10 @@
-import { DECKS, parseDeck, buildLibrary, shuffle } from './deck.js?v=8';
-import { db, ensure, resolveNames, searchTokens, resolveDeck } from './scryfall.js?v=8';
-import { parseDecklist } from './decklist.js?v=8';
-import { initState, reduce, zoneOf, canAttack, status, PILES, survivorSick } from './game.js?v=8';
-import { render, resetView, power, esc, hasKw } from './view.js?v=8';
-import { stampLog } from './stamp.js?v=8';
-import { connectNet, clientId } from './net.js?v=8';
+import { DECKS, parseDeck, buildLibrary, shuffle } from './deck.js?v=9';
+import { db, ensure, resolveNames, searchTokens, resolveDeck } from './scryfall.js?v=9';
+import { parseDecklist } from './decklist.js?v=9';
+import { initState, reduce, zoneOf, canAttack, status, PILES, survivorSick } from './game.js?v=9';
+import { render, resetView, power, esc, hasKw } from './view.js?v=9';
+import { stampLog } from './stamp.js?v=9';
+import { connectNet, clientId } from './net.js?v=9';
 
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
@@ -52,10 +52,14 @@ function renderOpts() {
     + `<div class="opt">${TOGGLES.map(t => `<label class="toggle"><input type="checkbox" data-t="${t.k}" ${opts[t.k] ? 'checked' : ''}>${t.label}</label>`).join('')}</div>`;
 }
 function renderDecks() {
-  $('#deck-grid').innerHTML = DECKS.map(d => {
+  const tile = d => {
     const art = d.feature && db[d.feature]?.art;
-    return `<button class="deck ${selDeck === d.key ? 'sel' : ''}" data-deck="${d.key}" style="${art ? `background-image:url('${art}')` : ''}"><span>${d.name}</span></button>`;
-  }).join('') + savedDecks.map(d =>
+    return `<button class="deck ${selDeck === d.key ? 'sel' : ''}" data-deck="${d.key}" style="${art ? `background-image:url('${art}')` : ''}"><span>${esc(d.name)}</span>${d.author ? `<small class="by">by ${esc(d.author)}</small>` : ''}</button>`;
+  };
+  $('#deck-grid').innerHTML = DECKS.filter(d => !d.community).map(tile).join('')
+    + `<div class="deck-group">Community Hordes <span>from against-the-horde.com</span></div>`
+    + DECKS.filter(d => d.community).map(tile).join('')
+    + `<div class="deck-group">Your own</div>` + savedDecks.map(d =>
     `<button class="deck custom-tile saved ${selDeck === d.key ? 'sel' : ''}" data-deck="${d.key}"><span>${esc(d.name)}</span><small>Saved</small></button>`).join('')
     + `<button class="deck custom-tile ${selDeck === 'custom' ? 'sel' : ''}" data-deck="custom"><span>Custom list</span></button>`;
   const d = DECKS.find(x => x.key === selDeck);
@@ -65,7 +69,7 @@ function renderDecks() {
   if (sv && $('#custom-box').dataset.for !== sv.key) { $('#custom-name').value = sv.name; $('#custom-text').value = sv.text; }
   if (selDeck === 'custom' && $('#custom-box').dataset.for !== 'custom') { $('#custom-name').value = ''; $('#custom-text').value = ''; }
   $('#custom-box').dataset.for = selDeck;
-  $('#setup-rules').innerHTML = d ? `<b>${d.name}.</b> ${esc(d.intro)}<br><b>Special rules:</b> ${esc(d.rules)}`
+  $('#setup-rules').innerHTML = d ? `<b>${esc(d.name)}.</b>${d.author ? ` By ${esc(d.author)} (<a href="${d.source}" target="_blank" rel="noopener">original deck</a>).` : ''} ${esc(d.intro)}<br><b>Special rules:</b> <span class="rules-text">${esc(d.rules)}</span>`
     : '<b>Custom Horde.</b> All creatures controlled by the Horde have haste.';
 }
 $('#opts').addEventListener('click', e => {
@@ -85,7 +89,12 @@ $('#custom-del').addEventListener('click', () => {
 });
 $('#deck-grid').addEventListener('click', e => {
   const b = e.target.closest('[data-deck]');
-  if (b) { selDeck = b.dataset.deck; renderDecks(); }
+  if (b) {
+    selDeck = b.dataset.deck;
+    const def = DECKS.find(x => x.key === selDeck);
+    if (def?.preset) { Object.assign(opts, def.preset); renderOpts(); }   // e.g. a deck that needs Horde life
+    renderDecks();
+  }
 });
 
 async function loadDeckArt() {
@@ -93,7 +102,7 @@ async function loadDeckArt() {
     await Promise.all(DECKS.map(async d => {
       deckText[d.key] = await fetch(d.file).then(r => r.text());
       const s = parseDeck(deckText[d.key]);
-      d.feature = (s.strong[0] || s.main.find(e => e.type === 'creature') || s.main[0])?.ref;
+      d.feature = d.art || (s.strong[0] || s.main.find(e => e.type === 'creature') || s.main[0])?.ref;
     }));
     await ensure(DECKS.map(d => d.feature));
   } catch (err) { console.warn(err); }

@@ -1,0 +1,49 @@
+// Merfolk by PiouPiou, from https://against-the-horde.com/deck/Uw7nGVMy6SvkmYBzUvmU
+## Horde Deck ##
+1 M20 creature - Coral Merfolk 4ed27607-21a8-4bc3-997e-6d2242313f6d 97a74ccf-8165-4db1-a87c-52c2d8ea0058
+1 SHM creature - Deepchannel Mentor 53b121df-3040-4ad0-a25d-587a299b4f8b e8ae429d-c09d-4818-8eb8-7e1c97e4b0c9
+2 RIX creature - Deeproot Elite 764e8e6e-0ace-4fc8-8ca5-468a10ae3b73 c8b738ce-a609-448f-97ea-bbf90ba833d7
+1 APC creature - Gaea's Skyfolk dd0da475-55d0-462e-bfac-6eeb5d39a099 8a564432-c2b3-4cf6-b4bc-2e2600b92911
+1 INV creature - Galina's Knight 9a484eb3-ae4a-465b-9dbc-f7a42a036e07 11b492d6-5e28-4f4b-942c-080d03cb0e92
+1 XLN creature - Headwater Sentries 17aa790d-d16a-4a90-b8ba-cd50e62f02f0 2af2c338-f5e9-4596-9435-c6aa965ae541
+1 SHM creature - Hollowsage 4e1efd99-8bfc-4650-a430-a754578facbd b6618713-0573-44f6-82d9-dfc16dfef052
+1 SHM creature - Inkfathom Infiltrator 2b43c7de-8c21-4137-b6b8-45965e4bb558 28854f0f-48d3-4a54-8811-c6329ad2e88e
+1 XLN creature - Kopala, Warden of Waves 0237cccc-3161-4d91-8e69-e3d315dcb246 34561f87-09d9-4f23-8a05-907fe1303e70
+1 TSB creature - Lord of Atlantis cc7f290f-ca00-4285-9bdb-4b4402444f30 a9407b60-8921-4531-bdbe-9a82aaa38d28
+3 RIX creature - Merfolk Mistbinder be56dfea-1ece-4f06-b1cc-d7425b5018b4 2935b829-23fb-415e-90f2-2e0016b5cde9
+2 M19 creature - Mist-Cloaked Herald 74255add-2894-4c31-81c1-d38873fa325f 574f73a7-9ff7-4ce3-9f56-002af968d35a
+1 TSR creature - Riptide Pilferer d3e40d26-1687-4cb4-9ff8-4c4421f09e53 b5fb9744-79cc-48d6-9e3b-f16073dde1e4
+1 10E creature - Rootwater Commando d62e9510-dc41-493f-8289-6e11303884fc 1da47bd4-58b6-4ef3-bd42-caf947e38645
+1 RIX creature - Seafloor Oracle f9f719cb-7778-4109-bbd3-4504ee1b5f49 479aff39-d9b0-411d-bcc5-a4d1d495f11c
+1 MOR creature - Stonybrook Schoolmaster 7ef67bae-4af3-47b9-95d2-08f3c5a0b39d 69fa2293-f398-4ad8-895e-c739ddea56d0
+1 XLN creature - Tempest Caller b6ec5a5c-144d-4ac3-bd05-2dc360c670fd 64d0f22d-0448-4039-b6f3-75d12e10f48c
+1 INV creature - Vodalian Zombie 58e4f299-bb32-4727-8498-a364166adc38 f30a5a06-32ce-4d71-b71f-e3e1d8d4511a
+2 DDT creature - Wake Thrasher f2d1e991-e13a-43c7-85aa-d53dd14822e6 7340b21f-726d-47e8-a2bf-1cde21be70f4
+
+1 C15 enchantment - Aura of Silence e7faf8eb-e829-4109-8dfe-42865a23ba86 8223756e-6e63-455d-9e86-5608863b7643
+2 A25 enchantment - Bident of Thassa e1afaef7-9fa3-4662-a95f-adfb0da9fd11 1e2df1d6-af98-4d6a-bae9-f5df8f21b6cf
+1 XLN enchantment - Deeproot Waters 8e7b31eb-7a91-4992-b24a-d81173e1dbc8 24bec3b7-5dfc-4b48-ae8f-5bf49470d030
+1 NPH artifact - Isolation Cell 56c558f3-535d-49aa-a2de-54e0bb598483 c5e72c64-cb0e-4a04-97d0-3537bb0420cd
+2 JMP enchantment - Rhystic Study 53236dd7-845a-444c-96d5-f41ed7325d8f d6914dba-0d27-4055-ac34-b3ebf5802221
+3 ME1 enchantment - Sunken City 17841133-c526-42a3-a1d2-a874e9bb7138 2262d907-2801-4314-813b-d9e14aba4826
+1 C14 enchantment - True Conviction fc299c1c-50f3-492a-b6b8-a3664bb72ab7 9e5dc58b-f486-4b9f-9138-33efa31a05e4
+
+3 STA sorcery - Day of Judgment d057289d-5e28-43d5-8ff3-4a1bc723477d 5bf85d00-52cc-4594-b4fd-5ec424210524
+1 ISD instant - Hysterical Blindness 705531b3-77cc-4d1f-851b-45e03c029991 5aeaa757-e3b0-4606-a689-e8a20a686c3a
+1 MH1 instant - Rebuild 496999a7-a82a-45ea-9c4e-1b6aabc781cd fd683b0b-1ac1-4fa7-9657-d3b29db2ae51
+
+60 TDMU token - Merfolk 4998e2fe-1537-40bb-a4d7-f668a5b8975f 1bad1c90-a3ea-469e-ba0b-91c75ea5b1a3
+
+## Too Strong ##
+1 STA sorcery - Day of Judgment d057289d-5e28-43d5-8ff3-4a1bc723477d 5bf85d00-52cc-4594-b4fd-5ec424210524
+1 SHM creature - Deepchannel Mentor 53b121df-3040-4ad0-a25d-587a299b4f8b e8ae429d-c09d-4818-8eb8-7e1c97e4b0c9
+1 TSB creature - Lord of Atlantis cc7f290f-ca00-4285-9bdb-4b4402444f30 a9407b60-8921-4531-bdbe-9a82aaa38d28
+1 C14 enchantment - True Conviction fc299c1c-50f3-492a-b6b8-a3664bb72ab7 9e5dc58b-f486-4b9f-9138-33efa31a05e4
+
+## Available Tokens ##
+
+## Weak Permanents ##
+
+## Powerfull Permanents ##
+1 SHM creature - Deepchannel Mentor 53b121df-3040-4ad0-a25d-587a299b4f8b e8ae429d-c09d-4818-8eb8-7e1c97e4b0c9
+1 C14 enchantment - True Conviction fc299c1c-50f3-492a-b6b8-a3664bb72ab7 9e5dc58b-f486-4b9f-9138-33efa31a05e4

@@ -430,3 +430,11 @@ body.dock-compact .dock-board { min-height: 56px; padding: 0; }
 .dock-piles { gap: 14px; }
 .dock-piles .pile-label { width: auto; align-items: center; gap: 0; }
 body.dock-compact .dock-body { grid-template-columns: minmax(0, 1fr); }
+.deck-group { grid-column: 1 / -1; width: 100%; margin-top: 8px; font-family: Cinzel, serif; letter-spacing: .08em; color: var(--gold2); font-size: 13px; }
+.deck-group span { font-family: Inter, sans-serif; letter-spacing: 0; color: var(--ink3); font-size: 12px; margin-left: 6px; }
+.deck small.by { position: absolute; left: 12px; bottom: 30px; font-size: 11px; color: var(--ink2); text-shadow: 0 1px 3px #000; }
+.rules-text { white-space: pre-line; }
+#setup-rules a { color: var(--gold2); }
+.deck small.by { top: 10px; bottom: auto; }
+.deck span { font-size: clamp(14px, 1.25vw, 18px); overflow-wrap: anywhere; }
+.deck span { font-size: clamp(12px, 1.15vw, 18px); overflow-wrap: normal; hyphens: auto; }

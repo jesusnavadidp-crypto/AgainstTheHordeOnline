@@ -1,0 +1,86 @@
+// Sleep with the Fishes by Jay, from https://against-the-horde.com/deck/qcJO1b7YnAs2VViS6MIv
+## Horde Deck ##
+1 C14 creature -e Breaching Leviathan 7d249b16-33ef-463e-9e5d-0b84d434f093 e02e3d91-7723-46b8-a393-855b6e89d877
+1 CMM creature -e Brinelin, the Moon Kraken 1f00edd6-4321-48a1-9053-77c77b922aeb 3af2dc41-202e-4aec-ba58-f5dec01eaf27
+1 MOC creature -e Chasm Skulker 69facbc7-3859-4716-b627-5199571fb3cf 886ce333-44d7-458e-a3bb-a58d1d7fc69b
+1 DDS creature -e Deep-Sea Kraken 54de4a7f-86f4-4029-80f7-bc25d6509cc8 df5a543e-8416-4f01-91f5-e1ed87f1a510
+1 IKO creature -e Gyruda, Doom of Depths 25eaa977-ca85-4f8d-8be5-9297a3edb14f e044ca59-1947-49d6-be58-57ab85b2668f
+1 CLB creature -e Hullbreaker Horror d4a84e78-d9b9-4c67-8a4b-4329e65f0f15 2d2a6bfd-8ab8-4f78-93d2-6249141ee27b
+1 2XM creature -e Inkwell Leviathan dbdd0963-b395-4cb8-ad9a-ed85a3e9f2e5 9f7a6dfb-a8f8-4899-b2db-c48d542dfd55
+1 MKC creature -e Koma, Cosmos Serpent 6ba0656f-e0d2-4735-9c66-3a00afa9fc23 876ad1df-e926-4d89-aad7-499a37b27f4c
+1 FDN creature -e Koma, World-Eater 1ebf2142-f171-40cd-8143-15f50084b707 a338cc7f-1134-42b4-b384-a93a4f92edc9
+1 CMM creature -e Lorthos, the Tidemaker d9fd4ff3-5ada-40f4-b949-6fe65624a0c4 f18c9963-c3e1-4877-9df5-18f52e287206
+1 MKC creature -e Marvo, Deep Operative 317ab0b3-1163-4893-a881-4c397feb213d d2f0500e-4e3d-448c-9bd2-fa4d48f27043
+1 MKC creature -e Nadir Kraken 5a73d439-bd78-42e1-90ae-eedd30536881 f0c5d004-78bd-4564-9f4a-fcf463f3a76a
+1 ME1 creature -e Polar Kraken d0ff30c8-ddb7-439d-b14d-c83fe3c8da87 c4643512-6071-45c4-bffc-8feec5bb094f
+1 PIP creature -e Red Death, Shipwrecker 0d40b2c3-9f39-45c6-8b25-12353f300613 2172a39d-7481-4a4a-861b-b4a1204d28ef
+17 MH3 creature -ed Reef Worm e3ad5cbc-4245-4e1e-8204-509381fa0c1c 25576181-a5a4-4baf-a2b4-fbfe13fb9df6
+5 SNC creature -e Reservoir Kraken 42e4d4d8-e4e0-4cf8-a6d0-887a17513280 01479b8a-b5a4-4d45-9073-5d24becad45b
+5 BBD creature -e Riptide Crab 8ae8a583-9843-474a-bd46-8090df883621 cdf9f3fb-40f5-4833-8638-5ddc2ba591f3
+1 CMR creature -e Scourge of Fleets 57308fc8-8915-4211-a5fd-9363caea9ab9 a79471f9-5cc0-48f5-9fa4-1f1374993825
+5 IKO creature -e Sea-Dasher Octopus 0b718d21-6873-4613-ad15-660d30527fcd bd6986a8-e258-46f0-88a9-8f84732f359e
+1 THB creature -e Serpent of Yawning Depths d31c6043-e005-4efe-9aa7-d82cb122eebe c3a83655-646e-4ccb-b015-13a2092f1444
+1 CMR creature -e Shipbreaker Kraken dda7a088-61e3-4c47-b9e0-529fc047f77e 2e558f0a-f921-4ecf-b1c9-2c93aa2d3fd9
+1 CMR creature -e Simic Sky Swallower e5c48c6d-a7bf-45b3-b48c-dc884d49c5f7 f791b7fa-3d12-409d-b017-cb9fd8b71af7
+1 FIN creature -e Sin, Spira's Punishment 3bcc378c-4470-4757-a0d5-025a32c918ea ce15bf1d-debf-4e0f-a69d-a57619d4b0ee
+1 FIC creature -e Sin, Unending Cataclysm 48534bbf-06b6-46a0-8a86-b14f38caee58 8e6e92aa-43bc-4be5-97a5-0817e7c3c9a9
+1 CMR creature -e Slinn Voda, the Rising Deep 753d98d3-d534-42c1-b728-a4f14c7f29ec cebf2c16-bd9d-4a8f-a1b6-6e0c393178bc
+1 C21 creature -e Spawning Kraken f0357833-80b5-40ba-874a-bd22ea6e4e46 84f7819e-9e69-4442-a0cd-d5ecbf40a0ec
+1 EOE creature -e Starwinder face2dc0-37ba-4efe-b900-b5521567c943 637a4457-5600-4d33-81c7-f4009df3d8a5
+1 FIN creature -e Summon: Leviathan b38d1811-64d7-4a35-a86c-3291eecd8391 4c6738f5-55cb-48f0-8e70-296d1c549cd3
+1 TLE creature -e The Terror of Serpent's Pass 771bf51d-cb32-4240-936c-f9d1e0c90cf0 f7569861-5b68-4265-bb45-3d54992bfe66
+1 TLA creature -e The Unagi of Kyoshi Island be922360-ee9f-4cfb-bf10-d481c5de5cb1 66387ea1-af31-4332-bacc-c32fe3260f4b
+1 CMM creature -e Tromokratis 9aa2f27b-4c00-44c1-8bc4-014350f05b6d 160686f3-44fd-4f7a-81cf-d3b5b964bfba
+1 NCC creature -e Wrexial, the Risen Deep fd36cc16-d3d9-4c9d-9d28-bbe7e5459d75 d9f621e8-4787-42ce-828d-72cec68acc6c
+
+
+
+10 TWHO token -e Fish bdb03306-355c-41e5-96bc-f60483e59b2a 297fc694-08f6-4477-b898-60ec641a0757
+10 TSNC token -e Fish 5bef2c1c-7215-4b01-8bb3-426e1c3dd2e0 3b2e726b-f124-43f7-87e4-bb06bbe8e3d7
+15 TMH3 token -e Fish 9c035738-c8a9-4418-9aaa-7d7d494226e1 e081becb-40f1-4151-aea3-5a9a9bd672c6
+5 TMH3 token -e Kraken cd0f813b-1f9f-484d-adab-bc8d16d2b867 9155825a-6449-4b36-aa14-4c227075ed51
+5 TTHB token -e Kraken fcd2cb28-287f-4159-8d77-853293372438 c3365aea-823d-44a9-94d3-ed2a31d85f34
+5 TIKO token -e Kraken b8b5dc05-b4b7-4f3d-9314-408c977bc9f3 ca17c7b2-180a-4bd1-9ab2-152f8f656dba
+
+## Too Strong ##
+1 C14 creature -e Breaching Leviathan 7d249b16-33ef-463e-9e5d-0b84d434f093 e02e3d91-7723-46b8-a393-855b6e89d877
+1 CMM creature -e Brinelin, the Moon Kraken 1f00edd6-4321-48a1-9053-77c77b922aeb 3af2dc41-202e-4aec-ba58-f5dec01eaf27
+1 DDS creature -e Deep-Sea Kraken 54de4a7f-86f4-4029-80f7-bc25d6509cc8 df5a543e-8416-4f01-91f5-e1ed87f1a510
+1 IKO creature -e Gyruda, Doom of Depths 25eaa977-ca85-4f8d-8be5-9297a3edb14f e044ca59-1947-49d6-be58-57ab85b2668f
+1 CLB creature -e Hullbreaker Horror d4a84e78-d9b9-4c67-8a4b-4329e65f0f15 2d2a6bfd-8ab8-4f78-93d2-6249141ee27b
+1 2XM creature -e Inkwell Leviathan dbdd0963-b395-4cb8-ad9a-ed85a3e9f2e5 9f7a6dfb-a8f8-4899-b2db-c48d542dfd55
+1 MKC creature -e Koma, Cosmos Serpent 6ba0656f-e0d2-4735-9c66-3a00afa9fc23 876ad1df-e926-4d89-aad7-499a37b27f4c
+1 FDN creature -e Koma, World-Eater 1ebf2142-f171-40cd-8143-15f50084b707 a338cc7f-1134-42b4-b384-a93a4f92edc9
+1 TMH3 token -e Kraken cd0f813b-1f9f-484d-adab-bc8d16d2b867 9155825a-6449-4b36-aa14-4c227075ed51
+1 TTHB token -e Kraken fcd2cb28-287f-4159-8d77-853293372438 c3365aea-823d-44a9-94d3-ed2a31d85f34
+1 TIKO token -e Kraken b8b5dc05-b4b7-4f3d-9314-408c977bc9f3 ca17c7b2-180a-4bd1-9ab2-152f8f656dba
+1 CMM creature -e Lorthos, the Tidemaker d9fd4ff3-5ada-40f4-b949-6fe65624a0c4 f18c9963-c3e1-4877-9df5-18f52e287206
+1 ME1 creature -e Polar Kraken d0ff30c8-ddb7-439d-b14d-c83fe3c8da87 c4643512-6071-45c4-bffc-8feec5bb094f
+1 CMR creature -e Scourge of Fleets 57308fc8-8915-4211-a5fd-9363caea9ab9 a79471f9-5cc0-48f5-9fa4-1f1374993825
+1 THB creature -e Serpent of Yawning Depths d31c6043-e005-4efe-9aa7-d82cb122eebe c3a83655-646e-4ccb-b015-13a2092f1444
+1 CMR creature -e Shipbreaker Kraken dda7a088-61e3-4c47-b9e0-529fc047f77e 2e558f0a-f921-4ecf-b1c9-2c93aa2d3fd9
+1 CMR creature -e Simic Sky Swallower e5c48c6d-a7bf-45b3-b48c-dc884d49c5f7 f791b7fa-3d12-409d-b017-cb9fd8b71af7
+1 FIN creature -e Sin, Spira's Punishment 3bcc378c-4470-4757-a0d5-025a32c918ea ce15bf1d-debf-4e0f-a69d-a57619d4b0ee
+1 CMR creature -e Slinn Voda, the Rising Deep 753d98d3-d534-42c1-b728-a4f14c7f29ec cebf2c16-bd9d-4a8f-a1b6-6e0c393178bc
+1 C21 creature -e Spawning Kraken f0357833-80b5-40ba-874a-bd22ea6e4e46 84f7819e-9e69-4442-a0cd-d5ecbf40a0ec
+1 EOE creature -e Starwinder face2dc0-37ba-4efe-b900-b5521567c943 637a4457-5600-4d33-81c7-f4009df3d8a5
+1 FIN creature -e Summon: Leviathan b38d1811-64d7-4a35-a86c-3291eecd8391 4c6738f5-55cb-48f0-8e70-296d1c549cd3
+1 TLE creature -e The Terror of Serpent's Pass 771bf51d-cb32-4240-936c-f9d1e0c90cf0 f7569861-5b68-4265-bb45-3d54992bfe66
+1 TLA creature -e The Unagi of Kyoshi Island be922360-ee9f-4cfb-bf10-d481c5de5cb1 66387ea1-af31-4332-bacc-c32fe3260f4b
+1 CMM creature -e Tromokratis 9aa2f27b-4c00-44c1-8bc4-014350f05b6d 160686f3-44fd-4f7a-81cf-d3b5b964bfba
+1 NCC creature -e Wrexial, the Risen Deep fd36cc16-d3d9-4c9d-9d28-bbe7e5459d75 d9f621e8-4787-42ce-828d-72cec68acc6c
+
+## Available Tokens ##
+1 TMKC token -e Koma's Coil 3e8443aa-7c50-4776-8e8c-eea82c7da0f1 370a7b71-3e7f-4354-ab19-09c710369851
+1 TBFZ token -e Octopus 0ca71a08-8a2d-4b0a-a174-85cd7d2f36b6 19ac0a35-fae7-49f9-ae96-4406df992dc9
+1 TMOC token -e Squid dd85fcd6-9bfd-4deb-a56a-77c6bca8eb97 44ea459b-b655-4106-9f24-9bdb440e04b1
+1 TMKC token -e Tentacle 82adaeee-e011-49db-af53-fda6c2b192d5 870375a1-4d19-4ec6-9e90-6c69eed8302f
+1 TMH3 token -e Whale 55ba83ae-9158-4c92-8bca-6dd96b517836 51b8f3b4-d0f3-4f2f-8e6f-7da1e852dac1
+
+## Weak Permanents ##
+
+## Powerfull Permanents ##
+1 OGW sorcery -e Crush of Tentacles 4ede153c-89cb-4121-bf23-a1d213d6f238 be1434e1-a0d6-4028-918b-1e2d17d3a227
+1 VOC sorcery -e Flood of Tears 3d92f2e6-27df-4329-b552-cf905f7616ba 440383de-d56a-47dd-ba8a-fae61f57f83b
+1 TM3C token -e Marit Lage 48e9147e-59f7-4693-83d7-7f514be871bc 25fca5a7-3b61-4e1e-83a3-a312c06fd922
+1 CMR sorcery -e Whelming Wave e510eaaf-6497-480f-baa8-f4796b5f1086 ddb863a0-3ff8-42a3-a151-4ea9aa433336

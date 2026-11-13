@@ -1,0 +1,31 @@
+// Rats - Plague Avatar by PiouPiou, from https://against-the-horde.com/deck/BpfE4TRSDyWssEZsj1d8
+## Horde Deck ##
+1 AFC creature -e Chittering Witch 8b1aa532-4f19-407e-83a5-13b3160ad8c2 8c298940-4277-4145-9f2f-a284fd2e1a9d
+3 CMM creature -e Ogre Slumlord 0a5e3748-2e58-4e53-9653-8af4e21cf223 2373e57c-01bb-4d49-94ad-b9ff75335cb7
+4 RTR creature -e Pack Rat 5632c2df-71e6-41b7-b8f5-c683812cc0e2 170693f5-13db-4191-99b1-e527ffb5b88e
+4 CM2 creature -e Patron of the Nezumi 038a8b6b-4529-4e06-bdff-9ee7ba291776 61740668-9f85-43ed-aaa0-33ce7101da6e
+2 AFC creature -ed Piper of the Swarm a6c5c5ea-0bd0-4d5a-bd3f-6217f14c9939 b4810704-beb8-499c-a921-26f672fd33b2
+4 TSR creature -e Stronghold Rats e91053ae-682a-4bbe-8394-fd65e626bacc 87761f00-bfbc-42dc-b96d-9f4258b43a8b
+4 WOE creature -e Tangled Colony 3f01c327-ba50-4fc3-a930-fa1fb02e34b9 77111ce8-6469-4bf7-882a-4ded1e5d7cad
+3 NCC creature -e Wave of Rats ccb0f59b-7947-4563-9e16-5d23246f4232 154dc126-67ca-4759-a424-37f0eb52e1fa
+
+
+3 CMM sorcery -e Crippling Fear e7a7ba65-ad14-41d5-889b-9bbeae9ab3f7 713a28c0-0d12-4c62-bc91-59c2ddfc9ef8
+2 CMM sorcery -e Kindred Dominance ccaa44f2-96be-44e2-884f-c31baa3908d5 af613b69-b9f6-4221-a21b-c8e4b0f010f1
+10 TPR sorcery -fe Lab Rats c53d6d3e-64e3-48b9-afab-3bde3164888f 6fd5d79e-cfd8-484b-bbc8-785177922e30
+
+20 TC17 token -e Rat 0d804fad-62db-4e3b-8d3c-ee62eba38569 c1788d4c-31b8-4f73-8275-5470316e7ad4
+40 TCMM token -e Rat 7c753b68-b519-43ba-9c58-4902f4850626 d5328e78-65c5-46e8-8980-3075ece0fa99
+
+## Too Strong ##
+1 CMM sorcery -e Crippling Fear e7a7ba65-ad14-41d5-889b-9bbeae9ab3f7 713a28c0-0d12-4c62-bc91-59c2ddfc9ef8
+1 CMM sorcery -e Kindred Dominance ccaa44f2-96be-44e2-884f-c31baa3908d5 af613b69-b9f6-4221-a21b-c8e4b0f010f1
+1 TC17 token -e Rat 0d804fad-62db-4e3b-8d3c-ee62eba38569 c1788d4c-31b8-4f73-8275-5470316e7ad4
+
+## Available Tokens ##
+
+## Weak Permanents ##
+
+## Powerfull Permanents ##
+1 LCC sorcery -e Pact of the Serpent f275039e-3dba-49b0-92aa-92721b1c7f95 481d268a-848c-4ccd-95ff-eed77dc20776
+1 C20 creature -e Species Specialist 51feda69-0ae8-4df3-bb50-a4bb9deb965d bb2cbf12-7f35-4162-b1a0-89a1632728c7

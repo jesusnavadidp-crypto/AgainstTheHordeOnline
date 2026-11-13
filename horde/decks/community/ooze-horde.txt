@@ -1,0 +1,39 @@
+// Ooze Horde by Zayn Harris, from https://against-the-horde.com/deck/eEmUMTnYiF3jsAEFSqVS
+## Horde Deck ##
+4 RNA creature -e Biogenic Ooze d2d84ba5-0d20-4ce3-8f1f-93cd9ef94f5f 6f11029a-b24d-4248-834f-b852b56857f6
+4 CON creature -e Bloodhall Ooze 79591c18-0065-49bb-a77a-734d4af87a3c e8b7208e-aa64-43fa-b7f8-8d40d7005358
+4 MH3 creature -e Expanding Ooze 4feeb493-8db5-41d3-bd27-486052e61f28 bbdb095d-b826-4e3e-8c61-0d408e52d6b8
+2 AFR creature -e Gelatinous Cube 3c2e2e69-cd44-458f-a5b0-8591baa24e65 1c472e70-300c-4881-86e7-c5ca690ab9b6
+2 SOI creature -e Inexorable Blob bddf0772-503c-42f1-bb86-1dfeeedf4a7e 0210ff44-19d9-4d24-9d32-f1f9f219d9e0
+2 NCC creature -e Mitotic Slime 1162c7ff-c0cb-469a-ad3c-322b0981ae1d 8aacf055-e36f-4428-8a3c-f73fa4b4307c
+2 ZNR creature -e Oran-Rief Ooze 94a7dcef-d1c1-4ffa-869e-b911e84ed66c fd2ad967-dd77-4c3a-b53c-2929ecf7750f
+2 C18 creature -e Ravenous Slime 4696decb-7bff-4c6b-8a7b-9ec324faefde 528d8f5e-2d58-4526-875b-21d199267210
+4 CN2 creature -e Splitting Slime c2153f2b-4a9f-40b6-8862-0e4143686c8c c940f17e-7ddd-4a1a-8d6b-a012ced97cf9
+2 MH3 creature -e Temperamental Oozewagg 07b0b2ad-4364-4a8d-94d5-8bf984b23d05 6625df2e-7046-411a-ae86-c46ac0953a0b
+2 CLB creature -e Uchuulon 1f266fa4-6667-49db-9d24-dfbabf1449ca ecef5fca-72ec-4aee-af6e-ee5d6f6bc567
+
+2 ISD enchantment -e Gutter Grime 0b8adb9e-97a5-43d9-87d6-993f22edaf3b a9d007a2-163d-4e09-a70b-280a6fa3203b
+
+18 MKM sorcery -e Slime Against Humanity b53597f4-1a0f-4fa8-9c17-29178cdc4d2b 1eb21318-d32e-4724-8908-c0d7613de2f4
+
+14 TRNA token -e Ooze 48bf9588-91fa-4f4c-a93a-3bef29ac9c27 0260e0ae-bf09-430a-a449-c16219d84b63
+6 TPCA token -e Ooze 8b3e81cb-d756-44e9-854c-715f51949ade 18b9c83d-4422-4b95-9fc2-070ed6b5bdf6
+10 TSOI token -e Ooze 54a41f40-3409-481f-8ad4-dfb939f6c7a9 623a7905-3a10-4d23-96fa-4960cac8f4e3
+20 TPCA token -e Ooze ee54f59e-a334-4f0d-8bc6-44fb97c948ac ab430ac0-6fbc-4361-8adc-0c13b399310f
+
+## Too Strong ##
+1 RNA creature -e Biogenic Ooze d2d84ba5-0d20-4ce3-8f1f-93cd9ef94f5f 6f11029a-b24d-4248-834f-b852b56857f6
+1 CN2 creature -e Splitting Slime c2153f2b-4a9f-40b6-8862-0e4143686c8c c940f17e-7ddd-4a1a-8d6b-a012ced97cf9
+1 CLB creature -e Uchuulon 1f266fa4-6667-49db-9d24-dfbabf1449ca ecef5fca-72ec-4aee-af6e-ee5d6f6bc567
+1 ISD enchantment -e Gutter Grime 0b8adb9e-97a5-43d9-87d6-993f22edaf3b a9d007a2-163d-4e09-a70b-280a6fa3203b
+1 TSOI token -e Ooze 54a41f40-3409-481f-8ad4-dfb939f6c7a9 623a7905-3a10-4d23-96fa-4960cac8f4e3
+
+## Available Tokens ##
+1 TGK2 token -e Ooze bb3da6d2-aed7-4057-b94b-6882fb45cc89 1f22cfdb-15af-46b9-b5c9-d0c76d5b15d6
+1 TMKM token -e Ooze 6d0b29d4-4d4b-4307-9778-27c7483cbcb8 54b37032-9660-4dfb-9629-c4e8eddc43b0
+2 CN2 creature -e Splitting Slime c2153f2b-4a9f-40b6-8862-0e4143686c8c c940f17e-7ddd-4a1a-8d6b-a012ced97cf9
+1 CLB creature -e Uchuulon 1f266fa4-6667-49db-9d24-dfbabf1449ca ecef5fca-72ec-4aee-af6e-ee5d6f6bc567
+
+## Weak Permanents ##
+
+## Powerfull Permanents ##
