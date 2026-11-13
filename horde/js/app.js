@@ -1,9 +1,10 @@
-import { DECKS, parseDeck, buildLibrary, shuffle } from './deck.js?v=6';
-import { db, ensure, resolveNames, searchTokens } from './scryfall.js?v=6';
-import { initState, reduce, zoneOf, canAttack, status, PILES } from './game.js?v=6';
-import { render, resetView, power, esc } from './view.js?v=6';
-import { stampLog } from './stamp.js?v=6';
-import { connectNet, clientId } from './net.js?v=6';
+import { DECKS, parseDeck, buildLibrary, shuffle } from './deck.js?v=8';
+import { db, ensure, resolveNames, searchTokens, resolveDeck } from './scryfall.js?v=8';
+import { parseDecklist } from './decklist.js?v=8';
+import { initState, reduce, zoneOf, canAttack, status, PILES, survivorSick } from './game.js?v=8';
+import { render, resetView, power, esc, hasKw } from './view.js?v=8';
+import { stampLog } from './stamp.js?v=8';
+import { connectNet, clientId } from './net.js?v=8';
 
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
@@ -15,6 +16,10 @@ let history = [];
 const history_ = window.history;  // the browser's, since `history` is our undo stack
 let busy = false;
 let dismissed = {};
+let viewSeat = null;          // whose Survivor board the dock shows
+let tokOwner = 'horde';       // who the Tokens drawer creates tokens for
+function mySeat() { return online ? online.me.id : 'local'; }
+function myDisplayName() { return online ? online.me.name : (($('#net-name').value || '').trim() || 'You'); }
 
 /* =================== setup screen =================== */
 const OPTS = [
@@ -32,6 +37,13 @@ const TOGGLES = [
 const opts = { players: 1, life: 20, size: 0.5, draws: 1, tokenMult: 1, safeZoneSize: 0.3, hordeLife: false, tokensPersist: false };
 const PRESET_SIZE = { 1: 0.5, 2: 0.75, 3: 1, 4: 1 };
 let selDeck = DECKS[0].key;
+
+// Custom Hordes the player saved (this browser only): [{ key: 'u:…', name, text }]
+const SAVED_KEY = 'horde.customDecks';
+let savedDecks = [];
+try { savedDecks = JSON.parse(localStorage.getItem(SAVED_KEY)) || []; } catch {}
+function storeSaved() { try { localStorage.setItem(SAVED_KEY, JSON.stringify(savedDecks)); } catch {} }
+const savedOf = key => savedDecks.find(d => d.key === key);
 const deckText = {};
 
 function renderOpts() {
@@ -43,9 +55,16 @@ function renderDecks() {
   $('#deck-grid').innerHTML = DECKS.map(d => {
     const art = d.feature && db[d.feature]?.art;
     return `<button class="deck ${selDeck === d.key ? 'sel' : ''}" data-deck="${d.key}" style="${art ? `background-image:url('${art}')` : ''}"><span>${d.name}</span></button>`;
-  }).join('') + `<button class="deck custom-tile ${selDeck === 'custom' ? 'sel' : ''}" data-deck="custom"><span>Custom list</span></button>`;
+  }).join('') + savedDecks.map(d =>
+    `<button class="deck custom-tile saved ${selDeck === d.key ? 'sel' : ''}" data-deck="${d.key}"><span>${esc(d.name)}</span><small>Saved</small></button>`).join('')
+    + `<button class="deck custom-tile ${selDeck === 'custom' ? 'sel' : ''}" data-deck="custom"><span>Custom list</span></button>`;
   const d = DECKS.find(x => x.key === selDeck);
-  $('#custom-box').hidden = selDeck !== 'custom';
+  const sv = savedOf(selDeck);
+  $('#custom-box').hidden = selDeck !== 'custom' && !sv;
+  $('#custom-del').hidden = !sv;
+  if (sv && $('#custom-box').dataset.for !== sv.key) { $('#custom-name').value = sv.name; $('#custom-text').value = sv.text; }
+  if (selDeck === 'custom' && $('#custom-box').dataset.for !== 'custom') { $('#custom-name').value = ''; $('#custom-text').value = ''; }
+  $('#custom-box').dataset.for = selDeck;
   $('#setup-rules').innerHTML = d ? `<b>${d.name}.</b> ${esc(d.intro)}<br><b>Special rules:</b> ${esc(d.rules)}`
     : '<b>Custom Horde.</b> All creatures controlled by the Horde have haste.';
 }
@@ -58,6 +77,12 @@ $('#opts').addEventListener('click', e => {
   renderOpts();
 });
 $('#opts').addEventListener('change', e => { if (e.target.dataset.t) opts[e.target.dataset.t] = e.target.checked; });
+$('#custom-del').addEventListener('click', () => {
+  const sv = savedOf(selDeck);
+  if (!sv || !confirm(`Delete the saved Horde "${sv.name}"?`)) return;
+  savedDecks = savedDecks.filter(d => d !== sv); storeSaved();
+  selDeck = 'custom'; renderDecks();
+});
 $('#deck-grid').addEventListener('click', e => {
   const b = e.target.closest('[data-deck]');
   if (b) { selDeck = b.dataset.deck; renderDecks(); }
@@ -103,7 +128,13 @@ async function startGame() {
     if (def) text = deckText[def.key] || await fetch(def.file).then(r => r.text());
     else {
       text = $('#custom-text').value;
-      def = { key: 'custom', name: 'Custom', haste: 'all', rules: 'All creatures controlled by the Horde have haste.' };
+      const nm = $('#custom-name').value.trim();
+      def = { key: 'custom', name: nm || 'Custom', haste: 'all', rules: 'All creatures controlled by the Horde have haste.' };
+      if (nm && text.trim()) {             // save / update this Horde for next time
+        const sv = savedOf(selDeck) || savedDecks.find(d => d.name === nm);
+        if (sv) { sv.name = nm; sv.text = text; } else savedDecks.push({ key: 'u:' + Date.now().toString(36), name: nm, text });
+        storeSaved();
+      }
     }
     const sec = parseDeck(text);
     const all = [...sec.main, ...sec.strong, ...sec.tokens];
@@ -208,6 +239,7 @@ async function handleNet(m) {
       $('#setup-status').textContent = 'Loading cards…';
       beginWith(await withCards(m.state));
       renderRoom();
+      if (!state.seats?.[m.you.id]) dispatch({ t: 'SEAT', seat: m.you.id, name: m.you.name }, false);
       break;
     }
     case 'act': {
@@ -218,6 +250,7 @@ async function handleNet(m) {
       const mine = pending.has(m.nonce);
       if (!mine && m.a.t === 'END_COMBAT' && state.phase === 'combat') await strikeAnimation();
       if (m.a.t === 'CREATE' && !db[m.a.ref]) await ensure([m.a.ref]).catch(() => {});
+      if (m.a.t === 'SEAT_DECK') await ensure([...new Set(m.a.entries.map(e => e.ref))]).catch(() => {});
       const prev = state;
       state = stampLog(reduce(state, m.a), m.by.name);
       renderAll(prev);
@@ -344,24 +377,62 @@ function kw(c) {
   const t = db[c.ref]?.text || '';
   const line = name => new RegExp(`^(?:[\\w' -]+, )*${name}\\b`, 'im');
   return {
+    wither: line('wither').test(t), deathtouch: line('deathtouch').test(t), trample: line('trample').test(t),
+    firstStrike: line('first strike').test(t) || line('double strike').test(t), double: line('double strike').test(t),
+    indestructible: line('indestructible').test(t),
     infect: line('infect').test(t),
     toxic: +(t.match(new RegExp(`^(?:[\\w' -]+, )*toxic (\\d+)`, 'im'))?.[1] || 0),
     poisonous: +(t.match(/^Poisonous (\d+)/im)?.[1] || 0),
   };
 }
 
-// What the unblocked attackers do to the Survivors.
+// What combat does: damage/poison to the Survivors, and the results of each block
+// (creatures that die, -1/-1 counters from infect/wither). Simplified: one blocker per
+// attacker, first/double strike decide who hits first, damage that isn't lethal is ignored.
 function combatHits() {
   let damage = 0, poison = 0;
+  const kill = new Set(), counters = [];
+  const P = c => power(state, db, c);
+  const onField = c => zoneOf(state, c.id) === 'battlefield';
   for (const id of state.zones.battlefield) {
-    const c = state.cards[id];
-    if (!c.attacking || c.blocked) continue;
-    const p = Math.max(0, power(state, db, c).p);
-    const k = kw(c);
-    if (k.infect) poison += p; else damage += p;
-    if (p > 0) poison += k.toxic + k.poisonous;
+    const a = state.cards[id];
+    if (!a.attacking) continue;
+    const ka = kw(a), pa = Math.max(0, P(a).p);
+    const b = a.blocked && a.blockedBy && state.cards[a.blockedBy] && onField(state.cards[a.blockedBy]) ? state.cards[a.blockedBy] : null;
+    if (a.blocked && !b) continue;                       // blocked by something off the table (or already gone)
+    if (!b) {
+      const dmg = pa * (ka.double ? 2 : 1);
+      if (ka.infect) poison += dmg; else damage += dmg;
+      if (pa > 0) poison += (ka.toxic + ka.poisonous) * (ka.double ? 2 : 1);
+      continue;
+    }
+    // Blocked: a first-strike damage step, then the regular one (double strike deals in both).
+    const kb = kw(b), pb = Math.max(0, P(b).p);
+    const side = (c, k, p) => ({ c, k, p, t: P(c).t, dmg: 0, minus: 0, dead: false });
+    const A = side(a, ka, pa), B = side(b, kb, pb);
+    const deal = (src, dst) => {
+      if (src.dead || src.p <= 0) return;
+      if (src.k.infect || src.k.wither) dst.minus += src.p; else dst.dmg += src.p;
+      if (src.k.deathtouch && !dst.k.indestructible) dst.deathtouched = true;
+    };
+    const settle = x => { x.dead = x.minus >= x.t || (!x.k.indestructible && (x.dmg >= x.t - x.minus || x.deathtouched)); };
+    if (ka.firstStrike) deal(A, B);
+    if (kb.firstStrike) deal(B, A);
+    settle(A); settle(B);
+    if (!ka.firstStrike || ka.double) deal(A, B);
+    if (!kb.firstStrike || kb.double) deal(B, A);
+    settle(A); settle(B);
+    if (A.minus) counters.push([a.id, -A.minus]);
+    if (B.minus) counters.push([b.id, -B.minus]);
+    if (A.dead) kill.add(a.id);
+    if (B.dead) kill.add(b.id);
+    if (ka.trample) {                                       // excess over what's lethal goes through
+      const lethal = ka.deathtouch ? 1 : Math.max(0, P(b).t);
+      const excess = pa * (ka.double ? 2 : 1) - lethal;
+      if (excess > 0) { if (ka.infect) poison += excess; else damage += excess; poison += ka.toxic + ka.poisonous; }
+    }
   }
-  return { damage, poison };
+  return { damage, poison, kill: [...kill], counters };
 }
 function incoming() { return combatHits().damage; }
 
@@ -371,6 +442,9 @@ let stallTimer = 0;
 function hordeStalled() { return state?.phase === 'horde' && !busy && Date.now() - lastActAt > 4000; }
 
 // Unblocked attackers lunge at the Survivors' life total along a curved path.
+// Strike animations hold the card at the impact point (fill: forwards) until the board
+// redraws after damage; renderAll then cancels them so no card keeps that offset.
+let strikeAnims = [];
 async function strikeAnimation() {
   const target = $('#life-box').getBoundingClientRect();
   const tx = target.left + target.width / 2, ty = target.top + target.height / 2;
@@ -392,7 +466,7 @@ async function strikeAnimation() {
       frames.push({ transform: `translate(${x}px, ${y}px) scale(${1.12 - 0.35 * t}) rotate(${side * 14 * t}deg)`, offset: 0.28 + 0.72 * t });
     }
     el.style.zIndex = 50;
-    el.animate(frames, { duration: DUR, delay: i * GAP, fill: 'forwards' });
+    strikeAnims.push({ el, anim: el.animate(frames, { duration: DUR, delay: i * GAP, fill: 'forwards' }) });
     setTimeout(() => impact(tx, ty), i * GAP + DUR);
   });
   await wait((els.length - 1) * GAP + DUR + 60);
@@ -412,17 +486,23 @@ async function resolveCombat() {
   if (busy) return;
   const hits = combatHits();
   busy = true;
+  hits.kill = hits.kill || []; hits.counters = hits.counters || [];
   renderAll(state);
   await strikeAnimation();
-  try { await dispatch({ t: 'END_COMBAT', damage: hits.damage, poison: hits.poison }); } finally { busy = false; renderAll(state); }
+  try { await dispatch({ t: 'END_COMBAT', damage: hits.damage, poison: hits.poison, kill: hits.kill, counters: hits.counters }); } finally { busy = false; renderAll(state); }
 }
 
 function renderAll(prev) {
   const s = state;
-  render(s, db);
+  renderDock(s);
+  render(s, db, { me: mySeat(), seat: viewSeat || mySeat() });
+  strikeAnims = strikeAnims.filter(({ el, anim }) => {
+    if (anim.playState !== 'finished') return true;   // still flying: leave it
+    anim.cancel(); el.style.zIndex = ''; return false;
+  });
   document.body.className = document.body.className.replace(/\bphase-\S+/g, '').trim();
   document.body.classList.add('phase-' + s.phase);
-  document.body.classList.toggle('has-board', s.zones.battlefield.length + s.zones.hand.length > 0);
+  document.body.classList.toggle('has-board', s.zones.battlefield.length + s.zones.hand.length > 0 || s.turn > 0);
 
   // life
   const ln = $('#life-num');
@@ -458,7 +538,10 @@ function renderAll(prev) {
     btn.textContent = !atk ? 'No attackers — your turn' : parts ? `Take ${parts}` : 'All blocked — your turn';
     if (parts) btn.classList.add('danger');
   }
-  else if (s.phase === 'survivors') btn.textContent = 'End turn — the Horde moves';
+  else if (s.phase === 'survivors') {
+    const n = survivorAttackers().length;
+    btn.textContent = n ? `Attack the Horde (${survivorAttackDamage()} damage)` : 'End turn — the Horde moves';
+  }
   else if (s.phase === 'horde-ready') btn.textContent = 'Start Horde turn';
 
   // spotlight
@@ -557,7 +640,8 @@ async function hordeTurn(resume = false) {
 
 // Pause after casting so the Survivors can apply what the new cards do
 // (tokens, counters, anthems) before the Horde attacks.
-function openTokens() {
+function openTokens(owner = 'horde') {
+  tokOwner = owner;
   $$('.drawer').forEach(x => x.classList.remove('on'));
   $('#drawer-tokens').classList.add('on');
   renderTokens();
@@ -576,6 +660,7 @@ async function beginCombat() {
 async function primary() {
   if (busy || !state) return;
   const p = state.phase;
+  if (p === 'survivors' && survivorAttackers().length) { await survivorAttack(); return; }
   if (p === 'setup' || p === 'survivors') {
     busy = true;
     let r;
@@ -629,7 +714,12 @@ document.addEventListener('click', e => {
   const ids = card._ids;
   const c = state.cards[ids[0]];
   switch (b.dataset.act) {
-    case 'block': dispatch({ t: 'BLOCK', ids: [ids[0]], v: true }); break;
+    case 'block': chooseBlocker(ids[0], e.clientX, e.clientY); break;
+    case 's-attack': {
+      const id = c.attacking ? ids.find(i => state.cards[i].attacking) : ids.find(i => !state.cards[i].attacking);
+      if (id != null) dispatch({ t: 'ATTACK', ids: [id], v: !c.attacking }, false);
+      break;
+    }
     case 'unblock': dispatch({ t: 'BLOCK', ids: [ids[0]], v: false }); break;
     case 'kill': dispatch({ t: 'MOVE', ids: [ids[0]], to: 'graveyard' }); break;
     case 'resolve': dispatch({ t: 'RESOLVE_STACK', id: c.id }).then(afterResolve); break;
@@ -642,7 +732,8 @@ function itemsFor(ids, zone) {
   const I = (label, fn, extra = {}) => ({ label, fn, ...extra });
   const mv = (to, pos) => k => dispatch({ t: 'MOVE', ids: ids.slice(0, k), to, pos });
   const out = [];
-  if (!c.token && db[c.ref]?.parts?.length) out.push(I('Create its tokens…', () => openTokens()));
+  if (!c.token && db[c.ref]?.parts?.length) out.push(I('Create its tokens…', () => openTokens(c.owner ? 'me' : 'horde')));
+  if (c.commander && zone !== 'command') out.push(I('Return to command zone', mv('command')));
   if (zone === 'battlefield') {
     out.push(I(c.tapped ? 'Untap' : 'Tap', k => dispatch({ t: 'TAP', ids: ids.slice(0, k), v: !c.tapped }), { kbd: 'T' }));
     if (c.creature) {
@@ -650,7 +741,9 @@ function itemsFor(ids, zone) {
       if (c.counters) out.push(I(c.counters > 0 ? 'Remove +1/+1 counter' : 'Remove −1/−1 counter', k => dispatch({ t: 'COUNTER', ids: ids.slice(0, k), d: c.counters > 0 ? -1 : 1 })));
       else out.push(I('Add −1/−1 counter', k => dispatch({ t: 'COUNTER', ids: ids.slice(0, k), d: -1 })));
     }
-    if (state.phase === 'combat' && c.creature) {
+    if (c.owner && c.creature && state.phase === 'survivors')
+      out.push(I(c.attacking ? 'Stop attacking' : 'Attack the Horde', k => dispatch({ t: 'ATTACK', ids: ids.slice(0, k), v: !c.attacking }, false)));
+    if (state.phase === 'combat' && c.creature && !c.owner) {
       out.push(c.attacking
         ? I('Remove from combat', k => dispatch({ t: 'ATTACK', ids: ids.slice(0, k), v: false }))
         : I('Add to the attack', k => dispatch({ t: 'ATTACK', ids: ids.slice(0, k), v: true })));
@@ -659,10 +752,10 @@ function itemsFor(ids, zone) {
     out.push('sep');
     out.push(I(c.creature ? 'Destroy' : 'Destroy / sacrifice', mv('graveyard'), { danger: true, kbd: 'D' }));
     out.push(I('Exile', mv('exile'), { kbd: 'E' }));
-    out.push(I('Return to Horde hand', mv('hand'), { hint: 'recast next turn' }));
+    out.push(c.owner ? I('Return to hand', mv('hand')) : I('Return to Horde hand', mv('hand'), { hint: 'recast next turn' }));
     out.push(I('Put on top of library', mv('library', 'top')));
     out.push(I('Put on bottom of library', mv('library', 'bottom')));
-    if (c.token) { out.push('sep'); out.push(I('Create more of this token', k => dispatch({ t: 'CREATE', ref: c.ref, name: c.name, creature: c.creature, n: k }))); }
+    if (c.token) { out.push('sep'); out.push(I('Create more of this token', k => dispatch({ t: 'CREATE', ref: c.ref, name: c.name, creature: c.creature, n: k, owner: c.owner }))); }
   } else if (zone === 'stack') {
     out.push(I('Resolved', () => { dispatch({ t: 'RESOLVE_STACK', id: c.id }).then(afterResolve); }));
     out.push(I('Countered', () => { dispatch({ t: 'RESOLVE_STACK', id: c.id, countered: true }).then(afterResolve); }));
@@ -671,8 +764,9 @@ function itemsFor(ids, zone) {
     return [];
   } else {
     // hand, graveyard, exile, library
-    out.push(I(c.spell ? 'Cast it now' : 'Put onto the battlefield', k => castIds(ids.slice(0, k))));
-    if (zone !== 'hand') out.push(I("Put into Horde's hand", mv('hand')));
+    out.push(I(c.owner ? (c.spell ? 'Cast it (to graveyard)' : zone === 'hand' || zone === 'command' ? 'Play it' : 'Put onto the battlefield')
+      : c.spell ? 'Cast it now' : 'Put onto the battlefield', k => castIds(ids.slice(0, k))));
+    if (zone !== 'hand') out.push(I(c.owner ? 'Put into hand' : "Put into Horde's hand", mv('hand')));
     if (zone !== 'graveyard') out.push(I(zone === 'hand' ? 'Discard' : 'Put into graveyard', mv('graveyard'), { danger: zone === 'hand' }));
     if (zone !== 'exile') out.push(I('Exile', mv('exile')));
     out.push(I('Put on top of library', mv('library', 'top')));
@@ -760,9 +854,14 @@ function openViewer(zone) {
   renderViewer();
 }
 function renderViewer() {
-  const z = viewerZone;
-  const ids = z === 'library' ? state.zones.library : [...state.zones[z]].reverse();
-  $('#viewer-title').textContent = { library: 'Horde library (top first)', graveyard: 'Horde graveyard', exile: 'Exile' }[z] + ` · ${ids.length}`;
+  const seat = typeof viewerZone === 'object' ? state.seats?.[viewerZone.seat] : null;
+  if (typeof viewerZone === 'object' && !seat) { $('#viewer').classList.remove('on'); return; }
+  const z = seat ? viewerZone.zone : viewerZone;
+  const list = seat ? seat.zones[z] : state.zones[z];
+  const ids = z === 'library' ? list : [...list].reverse();
+  $('#viewer-title').textContent = (seat
+    ? `${seat.name}'s ${{ library: 'library (top first)', graveyard: 'graveyard', exile: 'exile', command: 'command zone' }[z]}`
+    : { library: 'Horde library (top first)', graveyard: 'Horde graveyard', exile: 'Exile' }[z]) + ` · ${ids.length}`;
   $('#viewer-grid').innerHTML = ids.length ? ids.map(id => {
     const c = state.cards[id], d = db[c.ref];
     return `<div class="vcard" data-id="${id}">${d?.img ? `<img src="${d.img}" alt="${esc(c.name)}" loading="lazy">` : ''}<span>${esc(c.name)}</span></div>`;
@@ -772,7 +871,7 @@ $('#viewer-grid').addEventListener('click', e => {
   const v = e.target.closest('.vcard');
   if (!v) return;
   const id = +v.dataset.id;
-  openMenu(e.clientX, e.clientY, { title: state.cards[id].name, items: itemsFor([id], viewerZone) });
+  openMenu(e.clientX, e.clientY, { title: state.cards[id].name, items: itemsFor([id], typeof viewerZone === 'object' ? viewerZone.zone : viewerZone) });
 });
 
 /* =================== drawers =================== */
@@ -782,7 +881,7 @@ function toggleDrawer(id) {
   $$('.drawer').forEach(x => x.classList.remove('on'));
   if (on) { d.classList.add('on'); id === '#drawer-log' ? renderLog() : renderTokens(); }
 }
-$('#btn-tokens').addEventListener('click', () => state && toggleDrawer('#drawer-tokens'));
+$('#btn-tokens').addEventListener('click', () => state && ($('#drawer-tokens').classList.contains('on') ? $('#drawer-tokens').classList.remove('on') : openTokens(tokOwner)));
 $('#btn-tokens-hud').addEventListener('click', () => state && toggleDrawer('#drawer-tokens'));
 $('#btn-log').addEventListener('click', () => state && toggleDrawer('#drawer-log'));
 $('#btn-undo').addEventListener('click', undo);
@@ -829,13 +928,18 @@ function madeTokenRefs() {
 function tokenRow(ref, from) {
   const d = db[ref];
   if (!d) return from ? `<p class="drawer-sub">Loading a token made by ${esc(from)}…</p>` : '';
-  const onBoard = state.zones.battlefield.filter(id => state.cards[id].ref === ref).length;
+  const onBoard = (tokOwner === 'me' ? state.seats?.[mySeat()]?.zones.battlefield || [] : state.zones.battlefield).filter(id => state.cards[id].ref === ref).length;
   const pt = d.power != null ? `${d.power}/${d.toughness} ` : '';
   return `<div class="tok" data-ref="${ref}"><img src="${d.art || d.img || ''}" alt="">
     <div><div class="nm">${esc(d.name)}</div>${from ? `<div class="from">from ${esc(from)}</div>` : ''}<div class="ty">${esc(pt + d.type.replace(/^Token /, ''))}${onBoard ? ` · <b style="color:var(--gold2)">${onBoard} in play</b>` : ''}</div></div>
     <div class="btns"><button data-n="-1" title="Remove one">−1</button><button data-n="1">+1</button><button data-n="5">+5</button><button data-n="10">+10</button></div></div>`;
 }
+$('#tok-owner').addEventListener('click', e => {
+  const b = e.target.closest('[data-owner]');
+  if (b) { tokOwner = b.dataset.owner; renderTokens(); }
+});
 function renderTokens() {
+  for (const b of $$('#tok-owner [data-owner]')) b.classList.toggle('on', b.dataset.owner === tokOwner);
   const deckRefs = state.deck.tokenRefs || [];
   const boardRefs = [...new Set(state.zones.battlefield.map(id => state.cards[id]).filter(c => c.token).map(c => c.ref))].filter(r => !deckRefs.includes(r));
   const made = madeTokenRefs();
@@ -855,9 +959,13 @@ $('#token-list').addEventListener('click', e => {
   const ref = b.closest('.tok').dataset.ref;
   const n = +b.dataset.n;
   const d = db[ref];
-  if (n > 0) dispatch({ t: 'CREATE', ref, name: d.name.replace(/ Token$/, ''), creature: /Creature/.test(d.type), n });
-  else {
-    const id = state.zones.battlefield.find(i => state.cards[i].ref === ref && !state.cards[i].attacking) ?? state.zones.battlefield.find(i => state.cards[i].ref === ref);
+  const owner = tokOwner === 'me' ? mySeat() : undefined;
+  if (n > 0) {
+    const go = () => dispatch({ t: 'CREATE', ref, name: d.name.replace(/ Token$/, ''), creature: /Creature/.test(d.type), n, owner });
+    if (owner && !state.seats?.[owner]) dispatch({ t: 'SEAT', seat: owner, name: myDisplayName() }, false).then(go); else go();
+  } else {
+    const bf = owner ? state.seats?.[owner]?.zones.battlefield || [] : state.zones.battlefield;
+    const id = bf.find(i => state.cards[i].ref === ref && !state.cards[i].attacking) ?? bf.find(i => state.cards[i].ref === ref);
     if (id) dispatch({ t: 'MOVE', ids: [id], to: 'graveyard' });
   }
 });
@@ -873,12 +981,209 @@ async function doTokenSearch() {
 $('#token-go').addEventListener('click', doTokenSearch);
 $('#token-q').addEventListener('keydown', e => { if (e.key === 'Enter') doTokenSearch(); });
 
+/* =================== Survivor boards =================== */
+const SEAT_LABEL = { library: 'Library', graveyard: 'Graveyard', exile: 'Exile', command: 'Command', hand: 'Hand' };
+
+function renderDock(s) {
+  const me = mySeat(), seats = s.seats || {};
+  if (!viewSeat || (!seats[viewSeat] && viewSeat !== me)) viewSeat = me;
+  const list = Object.values(seats);
+  const tab = (id, name, sub) => `<button class="seat-tab ${viewSeat === id ? 'on' : ''}" data-seat="${esc(id)}">${esc(name)}${id === me ? ' <em>you</em>' : ''}<small>${sub}</small></button>`;
+  let tabs = list.map(st => tab(st.id, st.name, st.deckName
+    ? `${esc(st.deckName)} · ${st.zones.hand.length} in hand · ${st.zones.library.length} left` : 'no deck yet'));
+  if (!seats[me]) tabs.unshift(tab(me, 'You', 'no deck yet'));
+  const th = tabs.join('');
+  if ($('#seat-tabs').innerHTML !== th) $('#seat-tabs').innerHTML = th;
+
+  const seat = seats[viewSeat], mine = viewSeat === me;
+  $('#dock').classList.toggle('mine', mine);
+  $('#dock-tools').hidden = !mine;
+  const zones = ['library', 'graveyard', 'exile', ...(seat?.zones.command.length ? ['command'] : []), ...(!mine && seat ? ['hand'] : [])];
+  const piles = $('#dock-piles');
+  const key = viewSeat + '|' + zones.join();
+  if (piles.dataset.key !== key) {
+    piles.dataset.key = key;
+    piles.innerHTML = zones.map(z => `<div class="pile spile" data-pile="S:${esc(viewSeat)}:${z}" data-drop="s:${z}">
+      <div class="pile-top ${z === 'library' || z === 'hand' ? 'back' : ''}"><img alt="" draggable="false"></div>
+      <div class="pile-label">${SEAT_LABEL[z]} <b class="pile-count">0</b></div></div>`).join('');
+  }
+  for (const el of piles.querySelectorAll('[data-pile]')) {
+    const z = el.dataset.pile.split(':')[2];
+    const ids = seat?.zones[z] || [];
+    el.querySelector('.pile-count').textContent = ids.length;
+    el.classList.toggle('empty', !ids.length);
+    if (z !== 'library' && z !== 'hand') {
+      const top = ids.length ? s.cards[ids.at(-1)] : null;
+      const img = el.querySelector('img'), src = top ? db[top.ref]?.img || '' : '';
+      if (img.dataset.src !== src) { img.dataset.src = src; src ? (img.src = src) : img.removeAttribute('src'); }
+      el.querySelector('.pile-top').classList.toggle('has', !!top);
+    }
+  }
+  const empty = !seat || (!seat.deckName && !seat.zones.battlefield.length);
+  $('#dock-empty').hidden = !empty;
+  const eh = mine
+    ? `<button class="primary" data-seat-act="deck">Bring your deck</button><span>Optional: play your own cards here, from a Moxfield or Archidekt link or a pasted list.</span>`
+    : `<span>${esc(seat?.name || 'This player')} hasn't brought a deck yet.</span>`;
+  if ($('#dock-empty').innerHTML !== eh) $('#dock-empty').innerHTML = eh;
+  document.body.classList.toggle('dock-compact', empty);
+}
+$('#seat-tabs').addEventListener('click', e => {
+  const b = e.target.closest('[data-seat]');
+  if (!b || !state) return;
+  viewSeat = b.dataset.seat;
+  renderAll(state);
+});
+$('#dock-piles').addEventListener('click', e => {
+  const el = e.target.closest('[data-pile]');
+  if (!el || !state || busy) return;
+  const [, seatId, zone] = el.dataset.pile.split(':');
+  const seat = state.seats?.[seatId];
+  if (!seat || zone === 'hand') return;
+  if (zone !== 'library') { openViewer({ seat: seatId, zone }); return; }
+  if (seatId !== mySeat()) return;                     // someone else's library stays private
+  const n = seat.zones.library.length;
+  if (!n) return;
+  openMenu(e.clientX, e.clientY, { title: 'Your library', max: n, items: [
+    { label: 'Draw', fn: k => dispatch({ t: 'SEAT_DRAW', seat: seatId, n: k }), kbd: 'D' },
+    { label: 'Mill', fn: k => dispatch({ t: 'MOVE', ids: state.seats[seatId].zones.library.slice(0, k), to: 'graveyard' }) },
+    { label: 'Exile from the top', fn: k => dispatch({ t: 'MOVE', ids: state.seats[seatId].zones.library.slice(0, k), to: 'exile' }) },
+    'sep',
+    { label: 'Search your library', fn: () => openViewer({ seat: seatId, zone: 'library' }) },
+    { label: 'Shuffle', fn: () => dispatch({ t: 'SEAT_SHUFFLE', seat: seatId, order: shuffle(state.seats[seatId].zones.library) }) },
+  ] });
+});
+
+// "Block" on a Horde attacker: pick which of your creatures blocks it.
+function chooseBlocker(attackerId, x, y) {
+  const a = state.cards[attackerId];
+  const seat = state.seats?.[mySeat()];
+  const mine = (seat?.zones.battlefield || []).map(id => state.cards[id]).filter(c => c.creature && !c.tapped && !c.blocking);
+  if (!mine.length) { dispatch({ t: 'BLOCK', ids: [attackerId], v: true }); return; }
+  const items = mine.map(c => { const { p, t } = power(state, db, c); return { label: `Block with ${c.name}`, hint: `${p}/${t}`, fn: () => dispatch({ t: 'BLOCK', ids: [attackerId], v: true, by: c.id }) }; });
+  items.push('sep', { label: 'Just mark it blocked', hint: 'blocker not on the table', fn: () => dispatch({ t: 'BLOCK', ids: [attackerId], v: true }) });
+  openMenu(x, y, { title: `Block ${a.name}`, items });
+}
+
+// Survivors attacking the Horde on their turn.
+function survivorAttackers() {
+  const out = [];
+  for (const k in state?.seats || {}) for (const id of state.seats[k].zones.battlefield) if (state.cards[id].attacking) out.push(id);
+  return out;
+}
+function survivorAttackDamage() {
+  return survivorAttackers().reduce((n, id) => { const c = state.cards[id]; return n + Math.max(0, power(state, db, c).p) * (hasKw(db, c, 'double strike') ? 2 : 1); }, 0);
+}
+async function survivorAttack() {
+  const ids = survivorAttackers();
+  const damage = survivorAttackDamage();
+  const tap = ids.filter(id => !hasKw(db, state.cards[id], 'vigilance'));
+  banner('THE SURVIVORS STRIKE');
+  await dispatch({ t: 'SURVIVOR_ATTACK', ids, tap, damage });
+}
+
+// Buttons on the dock and in the deck drawer.
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-seat-act]');
+  if (!b || !state) return;
+  const me = mySeat(), seat = state.seats?.[me];
+  const act = b.dataset.seatAct;
+  if (act === 'deck') return openDeckDrawer();
+  if (act === 'tokens') return openTokens('me');
+  if (!seat?.deckName) return openDeckDrawer();
+  if (act === 'draw') dispatch({ t: 'SEAT_DRAW', seat: me, n: 1 });
+  else if (act === 'untap') dispatch({ t: 'UNTAP_ALL', seat: me });
+  else if (act === 'shuffle') dispatch({ t: 'SEAT_SHUFFLE', seat: me, order: shuffle(seat.zones.library) });
+  else if (act === 'mulligan') {
+    if (!confirm('Shuffle your hand into your library and draw 7? (Put cards on the bottom afterwards from their menu.)')) return;
+    dispatch({ t: 'SEAT_MULLIGAN', seat: me, order: shuffle([...seat.zones.library, ...seat.zones.hand]), n: 7 });
+  }
+});
+
+/* ----- your deck: links, pasted lists, saved decks ----- */
+const MYDECKS = 'horde.myDecks';
+let myDecks = [];
+try { myDecks = JSON.parse(localStorage.getItem(MYDECKS)) || []; } catch {}
+function storeMyDecks() { try { localStorage.setItem(MYDECKS, JSON.stringify(myDecks)); } catch {} }
+
+function openDeckDrawer() {
+  $$('.drawer').forEach(x => x.classList.remove('on'));
+  $('#drawer-deck').classList.add('on');
+  renderDeckDrawer();
+}
+function renderDeckDrawer() {
+  const seat = state?.seats?.[mySeat()];
+  $('#deck-tools').hidden = !seat?.deckName;
+  $('#deck-saved').innerHTML = myDecks.length ? `<div class="tok-section">Your saved decks</div>` + myDecks.map((d, i) =>
+    `<div class="saved-deck"><b>${esc(d.name)}</b><span>${esc(/^https?:/.test(d.input) ? new URL(d.input).hostname.replace('www.', '') : 'pasted list')}</span>
+      <button class="chip gold" data-load="${i}">Load</button><button class="chip" data-del="${i}" title="Forget">✕</button></div>`).join('') : '';
+}
+$('#deck-saved').addEventListener('click', e => {
+  const l = e.target.closest('[data-load]'), d = e.target.closest('[data-del]');
+  if (l) { const deck = myDecks[+l.dataset.load]; $('#deck-input').value = deck.input; $('#deck-save-name').value = deck.name; loadMyDeck(deck.input, deck.name); }
+  if (d) { myDecks.splice(+d.dataset.del, 1); storeMyDecks(); renderDeckDrawer(); }
+});
+$('#deck-load').addEventListener('click', () => loadMyDeck($('#deck-input').value, $('#deck-save-name').value));
+$('#btn-deck').addEventListener('click', () => state && ($('#drawer-deck').classList.contains('on') ? $('#drawer-deck').classList.remove('on') : openDeckDrawer()));
+
+async function loadMyDeck(input, saveAs = '') {
+  input = input.trim(); saveAs = saveAs.trim();
+  if (!input || !state) return;
+  const st = $('#deck-status');
+  $('#deck-load').disabled = true;
+  st.textContent = 'Loading…';
+  try {
+    let deck;
+    if (/^https?:\/\//i.test(input)) {
+      const r = await fetch('/api/deck?url=' + encodeURIComponent(input)).catch(() => null);
+      if (!r) throw new Error('Could not reach the server.');
+      const j = await r.json().catch(() => null);
+      if (!j) throw new Error('Importing links needs the online server. Paste the deck list as text instead.');
+      if (!r.ok) throw new Error(j.error || 'That link could not be imported.');
+      deck = j;
+    } else deck = { name: '', ...parseDecklist(input) };
+    const cards = deck.cards.filter(c => c.section === 'main' || c.section === 'commander');
+    if (!cards.length) throw new Error('No cards found. Paste one card per line, like "1 Sol Ring".');
+    st.textContent = `Looking up ${cards.length} cards on Scryfall…`;
+    const missing = await resolveDeck(cards);
+    const entries = [];
+    for (const c of cards) {
+      const d = c.ref && db[c.ref];
+      if (!d) continue;
+      const creature = /Creature/.test(d.type);
+      const n = c.section === 'commander' ? 1 : Math.min(c.count || 1, 99);
+      for (let i = 0; i < n; i++) entries.push({ ref: c.ref, name: d.name, type: d.token ? 'token' : 'card', creature,
+        spell: /\b(Instant|Sorcery)\b/.test(d.type) && !creature, section: c.section === 'commander' ? 'commander' : 'main' });
+    }
+    if (!entries.length) throw new Error('None of those cards were found on Scryfall.');
+    if (entries.length > 400) throw new Error('That deck is too big (400 cards max).');
+    const main = entries.filter(e => e.section === 'main').length;
+    const deckName = saveAs || deck.name || 'My deck';
+    const r = await dispatch({ t: 'SEAT_DECK', seat: mySeat(), name: myDisplayName(), deckName, entries, order: shuffle([...Array(main).keys()]), hand: 7 });
+    if (!r.before) throw new Error('The deck did not reach the room. Try again.');
+    if (saveAs) {
+      const old = myDecks.find(d => d.name === saveAs);
+      if (old) old.input = input; else myDecks.push({ name: saveAs, input });
+      storeMyDecks();
+    }
+    viewSeat = mySeat();
+    st.textContent = `Loaded ${deckName}: ${entries.length} cards, 7 drawn.` + (missing.length ? ` Not found: ${missing.slice(0, 8).join(', ')}${missing.length > 8 ? '…' : ''}` : '');
+    renderAll(state); renderDeckDrawer();
+  } catch (err) {
+    console.warn(err);
+    st.textContent = err.message || 'Something went wrong loading the deck.';
+  } finally { $('#deck-load').disabled = false; }
+}
+
 /* =================== zoom preview =================== */
 let zoomFor = null, zoomTimer = 0;
 function cardIdOf(t) {
   if (t.classList.contains('card')) return t._ids?.[0];
   if (t.classList.contains('vcard')) return +t.dataset.id;
   const pile = t.closest('.pile');
+  if (pile?.dataset.pile && state) {
+    const [, seat, zone] = pile.dataset.pile.split(':');
+    return ['graveyard', 'exile', 'command'].includes(zone) ? state.seats?.[seat]?.zones[zone].at(-1) : undefined;
+  }
   if (pile && state) { const z = state.zones[pile.id.replace('pile-', '')]; return z.at(-1); }
 }
 function showZoom(t) {
@@ -897,7 +1202,8 @@ function showZoom(t) {
   if (c.creature && zone === 'battlefield') {
     const { p, t: tt } = power(state, db, c);
     tags.push(`<span class="tag hot">${p}/${tt}</span>`);
-    if (c.cantAttack) tags.push('<span class="tag">Can\'t attack or block</span>');
+    if (c.owner) { if (survivorSick(state, c) && !hasKw(db, c, 'haste')) tags.push('<span class="tag">Summoning sick</span>'); }
+    else if (c.cantAttack) tags.push('<span class="tag">Can\'t attack or block</span>');
     else if (!canAttack(state, { ...c, tapped: false })) tags.push('<span class="tag">Summoning sick</span>');
     else tags.push('<span class="tag">Haste</span>');
   }
@@ -981,7 +1287,7 @@ document.addEventListener('pointerup', e => {
   d.card.style.opacity = '';
   const target = dropTarget(e.clientX, e.clientY);
   if (!target) return;
-  const to = target.dataset.drop;
+  const to = target.dataset.drop.replace(/^s:/, '');   // dock zones are the card owner's zones
   const ids = d.shift ? d.card._ids : [d.card._ids[0]];
   const from = zoneOf(state, ids[0]);
   if (to === from) return;

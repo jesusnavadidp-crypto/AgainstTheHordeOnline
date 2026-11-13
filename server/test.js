@@ -155,6 +155,7 @@ await check('static: traversal blocked (404)', async () => {
   assert.equal(status, 404);
 });
 await check('static: missing file 404', async () => { const r = await get('/nope.txt'); assert.equal(r.status, 404); await r.arrayBuffer(); });
+await check('healthz: 204 keep-alive', async () => { const r = await get('/healthz'); assert.equal(r.status, 204); await r.arrayBuffer(); });
 
 A.ws.close();
 child.kill();

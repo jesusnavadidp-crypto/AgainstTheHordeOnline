@@ -34,6 +34,16 @@ export function connectNet({ onMessage, onStatus }) {
   }
   open();
 
+  // Keep-alive: Render's free tier sleeps after 15 min without inbound traffic, and a sleeping
+  // server loses its rooms. While this tab is in a room, poke the server every 4 minutes so a
+  // long chat between turns doesn't count as idle. Hidden tabs still fire (timers are only
+  // throttled to about once a minute).
+  const keepAlive = setInterval(() => {
+    if (closed || !joinMsg) return;
+    if (ws.readyState === 1) ws.send(JSON.stringify({ t: 'ping' }));
+    fetch('/healthz', { cache: 'no-store' }).catch(() => {});
+  }, 4 * 60e3);
+
   return {
     send(msg) {
       const s = JSON.stringify(msg);
@@ -41,6 +51,6 @@ export function connectNet({ onMessage, onStatus }) {
     },
     // The message to resend after every reconnect.
     rejoinWith(msg) { joinMsg = msg; },
-    close() { closed = true; ws.close(); },
+    close() { closed = true; clearInterval(keepAlive); ws.close(); },
   };
 }

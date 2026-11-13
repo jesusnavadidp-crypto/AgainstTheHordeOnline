@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { WebSocketServer } from 'ws';
+import { importDeck } from './importers.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const WEB = path.resolve(here, '../horde');
@@ -19,11 +20,27 @@ const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; ch
   '.json': 'application/json; charset=utf-8', '.txt': 'text/plain; charset=utf-8', '.svg': 'image/svg+xml',
   '.png': 'image/png', '.jpg': 'image/jpeg', '.ico': 'image/x-icon', '.webp': 'image/webp' };
 
+// Deck import: GET /api/deck?url=<encoded>, rate-limited per IP.
+const importHits = new Map();
+async function deckRoute(req, res, u) {
+  const send = (code, obj) => { res.writeHead(code, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }); res.end(JSON.stringify(obj)); };
+  const ip = req.socket.remoteAddress ?? '?', now = Date.now();
+  const hits = (importHits.get(ip) ?? []).filter(t => now - t < 60e3);
+  if (hits.length >= 20) return send(429, { error: 'Too many imports — wait a minute and try again' });
+  hits.push(now); importHits.set(ip, hits);
+  if (importHits.size > 5000) importHits.clear();
+  try { send(200, await importDeck(u.searchParams.get('url') ?? '')); }
+  catch (e) { send(e.status ?? 502, { error: e.status ? e.message : 'Import failed' }); }
+}
+
 const server = http.createServer((req, res) => {
+  if (req.method === 'GET' && req.url.startsWith('/api/deck?')) return deckRoute(req, res, new URL(req.url, 'http://x'));
   const fail = (code) => { res.writeHead(code, { 'Cache-Control': 'no-store' }); res.end(code === 404 ? 'Not found' : 'Bad request'); };
   let rel;
   try { rel = decodeURIComponent(new URL(req.url, 'http://x').pathname); } catch { return fail(400); }
   if (rel.includes('\0')) return fail(400);
+  // Keep-alive / health check: an HTTP request Render counts as traffic (see net.js).
+  if (rel === '/healthz') { res.writeHead(204, { 'Cache-Control': 'no-store' }); return res.end(); }
   if (rel.endsWith('/')) rel += 'index.html';
   const file = path.resolve(WEB, '.' + rel);
   // Traversal guard: resolved path must stay inside WEB.
@@ -90,17 +107,31 @@ const isState = (s) => s && typeof s === 'object' && !Array.isArray(s) && s.zone
 // Reject malformed actions before they reach the reducer (a bad one could corrupt or hang a room).
 const ACTIONS = new Set(['MOVE', 'REVEAL', 'DRAW', 'GATHER_CASTS', 'CAST_REVEALED', 'RESOLVE_STACK', 'START_HORDE_TURN', 'PHASE',
   'BEGIN_COMBAT', 'ATTACK', 'BLOCK', 'END_COMBAT', 'END_SURVIVOR_TURN', 'LIFE', 'POISON', 'HORDE_LIFE', 'MILL', 'DAMAGE_HORDE',
-  'TAP', 'COUNTER', 'CREATE', 'SHUFFLE', 'ANTHEM', 'NOTE']);
+  'TAP', 'COUNTER', 'CREATE', 'SHUFFLE', 'ANTHEM', 'NOTE',
+  'SEAT', 'SEAT_DECK', 'SEAT_DRAW', 'SEAT_SHUFFLE', 'SEAT_MULLIGAN', 'UNTAP_ALL', 'SURVIVOR_ATTACK']);
 const int = (v, lo, hi) => Number.isInteger(v) && v >= lo && v <= hi;
 const num = (v) => typeof v === 'number' && Number.isFinite(v) && Math.abs(v) <= 1e6;
+const str = (v, max = 500) => typeof v === 'string' && v.length <= max;
 const idList = (v) => Array.isArray(v) && v.length <= 5000 && v.every(x => int(x, 0, 1e7));
+const SECTIONS = new Set(['commander', 'main', 'side', 'maybe']);
+const entry = (e) => e && typeof e === 'object' && str(e.ref, 64) && str(e.name, 200) && (e.section === undefined || SECTIONS.has(e.section))
+  && (e.type === undefined || str(e.type, 20));
 function validAction(a) {
   if (!a || typeof a !== 'object' || !ACTIONS.has(a.t)) return false;
-  for (const k of ['d', 'v', 'damage', 'poison']) if (k in a && !num(a[k])) return false;
-  for (const k of ['ids', 'order']) if (k in a && !idList(a[k])) return false;
+  for (const k of ['d', 'damage', 'poison']) if (k in a && !num(a[k])) return false;
+  if ('v' in a && !num(a.v) && typeof a.v !== 'boolean') return false;          // TAP/BLOCK/ATTACK use booleans
+  for (const k of ['ids', 'order', 'kill', 'tap']) if (k in a && !idList(a[k])) return false;
   if ('n' in a && !int(a.n, 0, 500)) return false;
-  if ('id' in a && !int(a.id, 0, 1e7)) return false;
-  for (const k of ['to', 'pos', 'phase', 'from', 'ref', 'name', 'msg']) if (k in a && (typeof a[k] !== 'string' || a[k].length > 500)) return false;
+  for (const k of ['id', 'by']) if (k in a && a[k] !== null && !int(a[k], 0, 1e7)) return false;
+  if ('hand' in a && !int(a.hand, 0, 30)) return false;
+  if ('setupLeft' in a && !int(a.setupLeft, 0, 3)) return false;
+  for (const k of ['to', 'pos', 'phase', 'from', 'ref', 'name', 'msg', 'deckName']) if (k in a && !str(a[k])) return false;
+  // Seat ids are client ids (UUIDs, or 'local'): never anything like __proto__.
+  for (const k of ['seat', 'owner']) if (k in a && a[k] !== undefined && !(typeof a[k] === 'string' && /^[A-Za-z0-9-]{1,64}$/.test(a[k]))) return false;
+  if (['END_COMBAT', 'SURVIVOR_ATTACK'].includes(a.t) && !(num(a.damage) && a.damage >= 0)) return false;
+  if (['MOVE', 'TAP', 'COUNTER', 'BLOCK', 'ATTACK', 'BEGIN_COMBAT'].includes(a.t) && !Array.isArray(a.ids)) return false;
+  if ('entries' in a && !(Array.isArray(a.entries) && a.entries.length <= 400 && a.entries.every(entry))) return false;
+  if ('counters' in a && !(Array.isArray(a.counters) && a.counters.length <= 200 && a.counters.every(x => Array.isArray(x) && int(x[0], 0, 1e7) && num(x[1])))) return false;
   return true;
 }
 
@@ -153,6 +184,8 @@ function handle(ws, m) {
       if (m.t === 'act') {
         const bad = (msg) => send(ws, { t: 'error', code: 'bad-action', msg, nonce: m.nonce });
         if (!validAction(m.a)) return bad('Invalid action');
+        // Players may only change their own seat (their deck, draws, name).
+        if (['SEAT', 'SEAT_DECK', 'SEAT_DRAW', 'SEAT_SHUFFLE', 'SEAT_MULLIGAN', 'UNTAP_ALL'].includes(m.a.t) && m.a.seat !== c.id) return bad('That is another player\'s seat');
         let next;
         try { next = stampLog(reduce(room.state, m.a), c.name); } catch (e) { return bad(String(e.message ?? e)); }
         // Only real changes become undo steps (a no-op, e.g. a duplicate button press, must not).

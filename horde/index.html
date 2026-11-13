@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=6">
+<link rel="stylesheet" href="styles.css?v=8">
 </head>
 <body>
 
@@ -17,6 +17,7 @@
   <div class="rules-chip" id="rules-chip" title="Deck special rules"></div>
   <button class="room-chip" id="room-chip" hidden title="Copy the invite link"><span class="dot"></span>Room <b class="code"></b><span class="players" id="room-players"></span></button>
   <div class="top-actions">
+    <button class="tb" id="btn-deck">Your deck</button>
     <button class="tb accent" id="btn-tokens">✦ Tokens</button>
     <button class="tb" id="btn-log">Log</button>
     <button class="tb" id="btn-undo" title="Undo (Ctrl+Z)">Undo</button>
@@ -59,6 +60,28 @@
   </div>
 </main>
 
+<!-- Survivor boards: yours, or another player's (tabs) -->
+<section class="dock" id="dock">
+  <div class="dock-head">
+    <div class="seat-tabs" id="seat-tabs"></div>
+    <div class="dock-tools" id="dock-tools">
+      <button class="chip" data-seat-act="draw">Draw</button>
+      <button class="chip" data-seat-act="untap">Untap all</button>
+      <button class="chip" data-seat-act="tokens">Tokens for me</button>
+      <button class="chip gold" data-seat-act="deck">Deck…</button>
+    </div>
+  </div>
+  <div class="dock-body">
+    <div class="dock-piles" id="dock-piles"></div>
+    <div class="dock-board" data-drop="s:battlefield">
+      <div class="row other" id="seat-other"></div>
+      <div class="row creatures" id="seat-creatures"></div>
+      <div class="dock-empty" id="dock-empty"></div>
+    </div>
+  </div>
+  <div class="seat-hand-wrap" data-drop="s:hand"><div class="row" id="seat-hand"></div></div>
+</section>
+
 <footer class="hud">
   <div class="hud-life">
     <div class="life" id="life-box">
@@ -96,11 +119,33 @@
 <div id="menu" class="menu"></div>
 
 <aside class="drawer" id="drawer-tokens">
-  <div class="drawer-head"><h3>Horde tokens</h3><button class="x" data-close>✕</button></div>
+  <div class="drawer-head"><h3>Tokens</h3><button class="x" data-close>✕</button></div>
+  <div class="seg tok-owner" id="tok-owner"><button data-owner="horde" class="on">For the Horde</button><button data-owner="me">For me</button></div>
   <p class="drawer-sub">Create tokens for the Horde. Click a token stack on the board to destroy, tap or move several at once.</p>
   <div class="search"><input id="token-q" placeholder="Search any token (e.g. Zombie, Treasure, 3/3 Beast)…"><button class="go" id="token-go">Search</button></div>
   <div id="token-list"></div>
 </aside>
+<aside class="drawer" id="drawer-deck">
+  <div class="drawer-head"><h3>Your deck</h3><button class="x" data-close>✕</button></div>
+  <p class="drawer-sub">Paste a <b>Moxfield</b> or <b>Archidekt</b> link, or paste the list as text (the "Export" text from any deck site, MTG Arena or MTGO). Commanders go to your command zone; you draw 7.</p>
+  <textarea id="deck-input" spellcheck="false" placeholder="https://www.moxfield.com/decks/…
+
+or
+
+1 Atraxa, Praetors' Voice
+1 Sol Ring
+…"></textarea>
+  <div class="deck-go"><input id="deck-save-name" maxlength="40" placeholder="Save as… (optional)"><button class="primary" id="deck-load">Load deck</button></div>
+  <p class="drawer-sub" id="deck-status"></p>
+  <div id="deck-saved"></div>
+  <div class="deck-tools" id="deck-tools">
+    <button class="chip" data-seat-act="draw">Draw 1</button>
+    <button class="chip" data-seat-act="mulligan">Mulligan</button>
+    <button class="chip" data-seat-act="shuffle">Shuffle library</button>
+    <button class="chip" data-seat-act="untap">Untap all</button>
+  </div>
+</aside>
+
 <aside class="drawer" id="drawer-log">
   <div class="drawer-head"><h3>Game log</h3><button class="x" data-close>✕</button></div>
   <ol id="log-list"></ol>
@@ -137,6 +182,7 @@
     </section>
     <div class="decks" id="deck-grid"></div>
     <div class="custom" id="custom-box" hidden>
+      <div class="custom-head"><input id="custom-name" maxlength="40" placeholder="Name this Horde to save it (optional)"><button class="ghost-btn" id="custom-del" hidden>Delete saved Horde</button></div>
       <textarea id="custom-text" spellcheck="false" placeholder="Paste a Horde list. One card per line:
 40 Zombie token
 2 Grave Titan
@@ -151,6 +197,6 @@ Also accepts the against-the-horde.com export format."></textarea>
   </div>
 </div>
 
-<script type="module" src="js/app.js?v=6"></script>
+<script type="module" src="js/app.js?v=8"></script>
 </body>
 </html>

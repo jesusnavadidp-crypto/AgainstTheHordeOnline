@@ -15,7 +15,7 @@ html, body { height: 100%; margin: 0; }
 body {
   background: var(--bg0); color: var(--ink);
   font: 14px/1.4 Inter, system-ui, sans-serif;
-  display: grid; grid-template-rows: 52px 1fr auto; overflow: hidden;
+  display: grid; grid-template-rows: 52px minmax(0, 1fr) auto auto; overflow: hidden;
   -webkit-user-select: none; user-select: none;
 }
 button { font: inherit; color: inherit; cursor: pointer; }
@@ -368,3 +368,65 @@ body.in-room .rules-chip { display: none; }
   border-radius: 10px; padding: 8px 14px; font-size: 13px; pointer-events: none; box-shadow: 0 10px 30px rgba(0,0,0,.5); }
 #log-list .by { color: var(--gold2); font-weight: 600; }
 @media (max-width: 760px) { .room-chip { font-size: 11px; padding: 3px 4px 3px 8px; } .room-chip .players { display: none; } }
+.custom-head { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+.custom-head input { flex: 1; min-width: 200px; background: rgba(0,0,0,.3); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+.deck.saved small { position: absolute; top: 8px; right: 10px; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--gold2); }
+
+/* ---------- Survivor boards (dock) ---------- */
+.dock { display: flex; flex-direction: column; gap: 6px; padding: 8px 20px 10px; min-height: 0; max-height: 44vh; z-index: 2;
+  border-top: 1px solid rgba(95,168,255,.18); background: linear-gradient(180deg, rgba(10,20,30,.92), rgba(8,12,18,.97));
+  --cw: clamp(62px, 5.4vw, 88px); }
+.dock-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.seat-tabs { display: flex; gap: 6px; overflow-x: auto; min-width: 0; }
+.seat-tab { display: flex; flex-direction: column; align-items: flex-start; border: 1px solid var(--line); background: rgba(255,255,255,.03);
+  border-radius: 10px; padding: 4px 12px; font-weight: 600; font-size: 13px; white-space: nowrap; }
+.seat-tab small { font-weight: 400; color: var(--ink2); font-size: 11px; }
+.seat-tab em { font-style: normal; color: var(--gold2); font-size: 11px; font-weight: 500; }
+.seat-tab.on { border-color: var(--shield); background: rgba(95,168,255,.1); }
+.dock-tools { display: flex; gap: 6px; flex-wrap: wrap; }
+.dock-tools[hidden] { display: none; }
+.dock-body { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 16px; min-height: 0; overflow: auto; }
+.dock-piles { display: flex; gap: 10px; align-items: flex-start; --cw: clamp(44px, 3.6vw, 58px); }
+.dock-piles .pile-label { font-size: 11px; flex-direction: column; }
+.dock-board { position: relative; display: flex; flex-direction: column; gap: 8px; padding: 8px 10px 22px; border-radius: 12px;
+  min-height: calc(var(--cw) * 1.4 + 30px); background: rgba(95,168,255,.04); border: 1px dashed rgba(95,168,255,.16); }
+.dock-board .row.creatures { flex: none; padding-top: 0; }
+.dock-board .row.other { --cw: clamp(54px, 4.6vw, 74px); }
+.dock-empty { position: absolute; inset: 0; display: flex; gap: 14px; align-items: center; justify-content: center; color: var(--ink2); font-size: 13px; padding: 0 12px; text-align: center; }
+.dock-empty[hidden] { display: none; }
+.dock-empty .primary { min-width: 0; padding: 8px 18px; }
+body.dock-compact .dock-piles { display: none; }
+body.dock-compact .dock-board { min-height: 56px; padding: 0; }
+.seat-hand-wrap { display: none; --cw: clamp(60px, 5.2vw, 84px); }
+.dock.mine .seat-hand-wrap:has(.has-cards) { display: block; }
+#seat-hand { flex-wrap: nowrap; overflow-x: auto; gap: 8px; padding: 10px 4px 2px; }
+.card.blocking .face.front { box-shadow: 0 0 0 2px var(--shield), 0 0 16px rgba(95,168,255,.5); }
+.act.tag { background: rgba(95,168,255,.18); border-color: var(--shield); cursor: default; max-width: 140px; overflow: hidden; text-overflow: ellipsis; }
+
+/* deck drawer */
+#drawer-deck { overflow: auto; }
+#deck-input { width: 100%; min-height: 150px; resize: vertical; background: rgba(0,0,0,.3); border: 1px solid var(--line); border-radius: 10px;
+  padding: 10px; font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; }
+.deck-go { display: flex; gap: 8px; }
+.deck-go input { flex: 1; min-width: 0; background: rgba(0,0,0,.3); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; }
+.deck-go .primary { min-width: 0; padding: 8px 16px; }
+.saved-deck { display: flex; gap: 6px; align-items: center; padding: 6px 8px; border: 1px solid var(--line); border-radius: 10px; margin-top: 6px; }
+.saved-deck b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.saved-deck span { color: var(--ink3); font-size: 11px; }
+.deck-tools { display: flex; gap: 6px; flex-wrap: wrap; }
+.deck-tools[hidden] { display: none; }
+.tok-owner button { flex: 1; }
+
+@media (max-width: 760px) {
+  .dock { padding: 6px 12px 8px; max-height: 46vh; --cw: 52px; }
+  .dock-body { grid-template-columns: 1fr; gap: 8px; }
+  .dock-piles { --cw: 36px; }
+  .seat-tab small { display: none; }
+}
+/* room for tapped cards (rotated 90°), short windows, dock pile labels */
+.card.tapped { margin-right: calc(var(--cw) * .42); }
+.rail { overflow-y: auto; }
+@media (max-height: 820px) and (min-width: 761px) { .rail { --cw: clamp(56px, 5vw, 80px); gap: 10px; padding: 10px 16px; } .table { grid-template-columns: calc(clamp(56px, 5vw, 80px) + 32px) 1fr; } }
+.dock-piles { gap: 14px; }
+.dock-piles .pile-label { width: auto; align-items: center; gap: 0; }
+body.dock-compact .dock-body { grid-template-columns: minmax(0, 1fr); }

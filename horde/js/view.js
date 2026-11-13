@@ -1,6 +1,6 @@
 // Board renderer. Cards are keyed DOM elements that persist between renders;
 // every move between zones is animated with FLIP (First-Last-Invert-Play).
-import { PILES, canAttack } from './game.js?v=6';
+import { PILES, canAttack, survivorSick } from './game.js?v=8';
 
 const els = new Map();          // entity key -> element
 let prevZone = {};              // card id -> zone at last render
@@ -8,20 +8,44 @@ let prevRef = {};               // card id -> scryfall id at last render
 const EASE = 'cubic-bezier(.2,.9,.25,1)';
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const DUR = reduced ? 0 : 520;
+let view = { me: null, seat: null };   // whose board is shown in the Survivor dock, and who "I" am
+
+// Keyword on the card's own keyword line (e.g. "Flying, haste").
+export function hasKw(db, c, kw) {
+  return new RegExp(`^(?:[\\w' -]+, )*${kw}\\b`, 'im').test(db[c.ref]?.text || '');
+}
+const onBattlefield = (s, c) => (c.owner ? s.seats?.[c.owner]?.zones.battlefield : s.zones.battlefield)?.includes(c.id);
+const isLib = z => z === 'library' || /:library$/.test(z || '');
 
 export function power(s, db, c) {
   const d = db[c.ref] || {};
   const p = parseInt(d.power), t = parseInt(d.toughness);
   return {
-    p: (isNaN(p) ? 0 : p) + c.counters + s.anthem,
-    t: (isNaN(t) ? 0 : t) + c.counters + s.anthem,
+    p: (isNaN(p) ? 0 : p) + c.counters + (c.owner ? 0 : s.anthem),
+    t: (isNaN(t) ? 0 : t) + c.counters + (c.owner ? 0 : s.anthem),
     raw: d.power != null,
   };
 }
 
 function entities(s) {
-  const out = { 'bf-creatures': [], 'bf-other': [], 'attack-lane': [], 'reveal-lane': [], 'stack-lane': [], 'hand-row': [] };
+  const out = { 'bf-creatures': [], 'bf-other': [], 'attack-lane': [], 'reveal-lane': [], 'stack-lane': [], 'hand-row': [],
+    'seat-creatures': [], 'seat-other': [], 'seat-hand': [] };
   const groups = new Map();
+  // The Survivor board shown in the dock (yours, or another player's).
+  const seat = s.seats?.[view.seat];
+  if (seat) {
+    for (const id of seat.zones.battlefield) {
+      const c = s.cards[id];
+      const cont = c.creature ? 'seat-creatures' : 'seat-other';
+      if (c.token) {
+        const key = `g:${seat.id}:${c.ref}|${+c.tapped}|${c.counters}|${+c.attacking}|${c.blocking || 0}`;
+        let g = groups.get(key);
+        if (!g) { g = { key, ids: [], cont, group: true }; groups.set(key, g); out[cont].push(g); }
+        g.ids.push(id);
+      } else out[cont].push({ key: 'c:' + id, ids: [id], cont });
+    }
+    if (view.seat === view.me) for (const id of seat.zones.hand) out['seat-hand'].push({ key: 'c:' + id, ids: [id], cont: 'seat-hand' });
+  }
   for (const id of s.zones.battlefield) {
     const c = s.cards[id];
     const cont = c.attacking ? 'attack-lane' : c.creature ? 'bf-creatures' : 'bf-other';
@@ -66,15 +90,19 @@ function update(el, e, s, db) {
   el.classList.toggle('token', c.token);
   el.classList.toggle('stacked', n > 1);
   el.classList.toggle('stacked3', n > 2);
-  el.classList.toggle('sick', c.creature && e.cont === 'bf-creatures' && s.phase !== 'setup' && !canAttack(s, { ...c, tapped: false }) && !c.cantAttack);
+  el.classList.toggle('sick', c.owner
+    ? e.cont === 'seat-creatures' && survivorSick(s, c) && !hasKw(db, c, 'haste')
+    : c.creature && e.cont === 'bf-creatures' && s.phase !== 'setup' && !canAttack(s, { ...c, tapped: false }) && !c.cantAttack);
+  el.classList.toggle('blocking', !!c.blocking);
+  el.classList.toggle('mine', !!c.owner && c.owner === view.me);
   el.classList.toggle('pacifist', c.cantAttack);
   el.querySelector('.count').textContent = n > 1 ? '×' + n : '';
   el.querySelector('.ctr').textContent = c.counters ? (c.counters > 0 ? '+' : '') + c.counters + '/' + (c.counters > 0 ? '+' : '') + c.counters : '';
   const pt = el.querySelector('.pt');
-  if (c.creature && s.zones.battlefield.includes(c.id)) {
+  if (c.creature && onBattlefield(s, c)) {
     const { p, t } = power(s, db, c);
     pt.textContent = `${p}/${t}`;
-    pt.classList.toggle('buffed', c.counters + s.anthem > 0);
+    pt.classList.toggle('buffed', c.counters + (c.owner ? 0 : s.anthem) > 0);
   } else pt.textContent = '';
 
   // contextual action buttons on the card
@@ -86,6 +114,12 @@ function update(el, e, s, db) {
     acts += `<button class="act danger" data-act="kill">${n > 1 ? 'Kill 1' : 'Kill'}</button>`;
   } else if (e.cont === 'stack-lane') {
     acts = `<button class="act primary" data-act="resolve">Resolved</button><button class="act" data-act="counter">Countered</button>`;
+  } else if (e.cont === 'seat-creatures' && c.owner === view.me && s.phase === 'survivors') {
+    const ready = !c.tapped && (!survivorSick(s, c) || hasKw(db, c, 'haste'));
+    if (c.attacking) acts = `<button class="act danger" data-act="s-attack">Attacking ✕</button>`;
+    else if (ready) acts = `<button class="act" data-act="s-attack">${n > 1 ? 'Attack 1' : 'Attack'}</button>`;
+  } else if (c.blocking && e.cont === 'seat-creatures') {
+    acts = `<span class="act tag">Blocking ${esc(s.cards[c.blocking]?.name || '')}</span>`;
   }
   const box = el.querySelector('.acts');
   if (box.innerHTML !== acts) box.innerHTML = acts;
@@ -93,9 +127,14 @@ function update(el, e, s, db) {
 }
 
 function rect(el) { return el.getBoundingClientRect(); }
+// Where each visible pile is. Horde piles are 'library' etc.; Survivor piles are 'S:<seat>:<zone>'.
 function pileRects() {
   const r = {};
   for (const p of PILES) r[p] = rect(document.querySelector(`#pile-${p} .pile-top`));
+  for (const el of document.querySelectorAll('[data-pile]')) {
+    const box = rect(el.querySelector('.pile-top') || el);
+    if (box.width) r[el.dataset.pile] = box;
+  }
   return r;
 }
 
@@ -146,6 +185,7 @@ function ghost({ from, to, img, faceDown, flipToFront, mode, delay = 0, el: src 
 function zoneMap(s) {
   const m = {};
   for (const zn in s.zones) for (const id of s.zones[zn]) m[id] = zn;
+  for (const k in s.seats || {}) for (const zn in s.seats[k].zones) for (const id of s.seats[k].zones[zn]) m[id] = `S:${k}:${zn}`;
   return m;
 }
 
@@ -178,7 +218,8 @@ export function resetView() {
   prevRef = {};
 }
 
-export function render(s, db) {
+export function render(s, db, opts = {}) {
+  view = { me: opts.me ?? null, seat: opts.seat ?? opts.me ?? null };
   // FIRST: where is everything right now?
   const prevKeyRect = new Map(), prevIdRect = new Map();
   for (const [key, el] of els) {
@@ -221,8 +262,8 @@ export function render(s, db) {
     if (!el._isNew) { flip(el, prevKeyRect.get(key), to, false); continue; }
     const id = el._ids[0];
     const pz = prevZone[id];
-    const from = prevIdRect.get(id) || (PILES.includes(pz) ? pilesBefore[pz] : null);
-    if (from) flip(el, from, to, pz === 'library');
+    const from = prevIdRect.get(id) || pilesBefore[pz] || null;
+    if (from) flip(el, from, to, isLib(pz));
     else spawn(el);
   }
   const takenIds = new Set();
@@ -232,7 +273,7 @@ export function render(s, db) {
     const zn = newZone[id];
     for (const i of el._ids) takenIds.add(i);
     if (!s.cards[id]) { ghost({ from, mode: 'poof', el }); continue; }
-    if (PILES.includes(zn)) { ghost({ from, to: pilesAfter[zn], el }); continue; }
+    if (pilesAfter[zn]) { ghost({ from, to: pilesAfter[zn], el }); continue; }
     const tgt = [...els.values()].find(x => x._ids.includes(id));
     if (tgt && !tgt._isNew) ghost({ from, to: rect(tgt), el, mode: 'vanishAtEnd' });
   }
@@ -241,13 +282,15 @@ export function render(s, db) {
   for (const id in prevZone) {
     if (takenIds.has(+id)) continue;
     const a = prevZone[id], b = newZone[id];
-    if (!PILES.includes(a) || a === b) continue;
-    if (b && !PILES.includes(b)) continue;
+    if (!pilesBefore[a] || a === b) continue;
+    if (b && !pilesAfter[b]) continue;
     if (k >= 14) break;
     const ref = s.cards[id]?.ref || prevRef[id];
     const from = pilesBefore[a];
-    if (!b) { ghost({ from, to: pilesAfter.graveyard, img: db[ref]?.img, faceDown: a === 'library', flipToFront: a === 'library', mode: 'vanishAtEnd', delay: k * 70 }); }
-    else ghost({ from, to: pilesAfter[b], img: db[ref]?.img, faceDown: a === 'library', flipToFront: a === 'library' && b !== 'library', delay: k * 70 });
+    // Cards going into someone else's hidden hand stay face down.
+    const hidden = /:hand$/.test(b || '') || /:hand$/.test(a || '');
+    if (!b) { ghost({ from, to: pilesAfter.graveyard, img: db[ref]?.img, faceDown: isLib(a), flipToFront: isLib(a), mode: 'vanishAtEnd', delay: k * 70 }); }
+    else ghost({ from, to: pilesAfter[b], img: db[ref]?.img, faceDown: isLib(a) || hidden, flipToFront: isLib(a) && !isLib(b) && !hidden, delay: k * 70 });
     k++;
   }
   prevZone = newZone;

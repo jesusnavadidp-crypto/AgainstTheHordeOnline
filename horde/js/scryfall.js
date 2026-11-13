@@ -75,3 +75,34 @@ export async function searchTokens(q) {
   save();
   return out;
 }
+
+/**
+ * Look up a player's deck: cards are { name, set?, collector?, scryfallId? }.
+ * Prefers the exact printing, falls back to the name. Sets `ref` on each card found
+ * and returns the names that could not be found.
+ */
+export async function resolveDeck(cards) {
+  const front = n => n.split(' // ')[0];
+  const key = (set, num) => `${String(set).toLowerCase()}|${num}`;
+  const idf = c => c.scryfallId ? { id: c.scryfallId }
+    : c.set && c.collector ? { set: c.set, collector_number: String(c.collector) } : { name: front(c.name) };
+  const index = found => {
+    for (const f of found) db[f.id] = slim(f);
+    const m = new Map();
+    for (const f of found) {
+      m.set('id:' + f.id, f); m.set('sc:' + key(f.set, f.collector_number), f);
+      m.set('n:' + f.name.toLowerCase(), f); m.set('n:' + front(f.name).toLowerCase(), f);
+    }
+    return m;
+  };
+  const pick = (m, c) => m.get('id:' + c.scryfallId) || (c.set && m.get('sc:' + key(c.set, c.collector)))
+    || m.get('n:' + c.name.toLowerCase()) || m.get('n:' + front(c.name).toLowerCase());
+  let m = index(await collection(cards.map(idf)));
+  let missing = cards.filter(c => { const f = pick(m, c); if (f) c.ref = f.id; return !f; });
+  if (missing.length) {                    // second chance by name (unknown printing, typo in set code…)
+    m = index(await collection([...new Set(missing.map(c => front(c.name)))].map(name => ({ name }))));
+    missing = missing.filter(c => { const f = pick(m, c); if (f) c.ref = f.id; return !f; });
+  }
+  save();
+  return missing.map(c => c.name);
+}

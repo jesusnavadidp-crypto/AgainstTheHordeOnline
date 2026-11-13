@@ -7,5 +7,8 @@
     "build": "npm --prefix server ci",
     "start": "node server/server.js"
   },
-  "engines": { "node": ">=20" }
+  "engines": {
+    "node": ">=20"
+  },
+  "type": "module"
 }

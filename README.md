@@ -30,7 +30,7 @@ The project root has `render.yaml`, `package.json` (`npm run build` installs the
 2. On render.com, sign in with GitHub, choose **New → Blueprint**, pick the repository, and deploy. Render reads `render.yaml`.
 3. Share the `https://….onrender.com` address. Rooms use secure WebSockets automatically.
 
-Free-tier notes: the server sleeps after 15 minutes with no one playing and takes about a minute to wake. Its disk is temporary, so rooms are lost when it sleeps or redeploys (a game in progress keeps it awake).
+Free-tier notes: the server sleeps after 15 minutes with no one playing and takes about a minute to wake. Its disk is temporary, so rooms are lost when it sleeps or redeploys (while anyone has a room open, their browser pings the server every 4 minutes, so a room stays alive through long pauses; close every tab and it can sleep).
 
 ## What's in it
 
@@ -40,6 +40,8 @@ Free-tier notes: the server sleeps after 15 minutes with no one playing and take
 - **Combat:** you block per creature or per stack, kill attackers, and add a temporary +X/+X Horde bonus. Damage and poison (infect, toxic, poisonous) are calculated for you, and unblocked attackers strike at your life total.
 - **Card actions:** click any card for a menu (tap, counters, destroy, exile, hand, library top or bottom). You can also drag a card onto a pile, the hand or the battlefield. Shift-drag moves a whole stack.
 - **Tokens:** identical tokens collapse into stacks with counts. Menu actions apply to N of a stack. The Tokens drawer adds the deck's tokens, suggests tokens that cards in play create, and can search any token on Scryfall.
+- **Your own deck:** each Survivor can bring a deck from a Moxfield or Archidekt link, or as a pasted list (Arena, MTGO or any site's text export). You get your own library, hand (hidden from others), battlefield, graveyard, exile and command zone, start with 7 cards, and untap and draw automatically each turn. Pick which of your creatures blocks each attacker; deaths, deathtouch, infect/wither counters, first strike and trample are worked out for you. Mark creatures to attack and their damage mills the Horde. Decks can be saved for next time.
+- **Saved Hordes:** name a custom Horde list and it stays on the setup screen.
 - **Online rooms:** everyone sees and controls the same table live, with all animations. The log shows who did what, undo works for the whole room, and refreshing puts you back in your seat. Rooms survive a server restart and expire after 12 hours with nobody connected.
 - **Other:** hover to zoom, graveyard/exile/library viewers, undo (Ctrl+Z), game log, autosave (offline), and Space as the main action.
 
@@ -50,7 +52,8 @@ Free-tier notes: the server sleeps after 15 minutes with no one playing and take
 - `horde/js/app.js` covers setup, the Horde turn sequence, menus, drag & drop, zoom, drawers and the online room client.
 - `horde/js/net.js` is the WebSocket link (reconnects and rejoins on its own); `horde/js/stamp.js` tags log entries with who caused them.
 - `horde/js/deck.js` parses deck lists and builds the library (deck size, safe zone).
-- `horde/js/scryfall.js` fetches and caches card data.
+- `horde/js/scryfall.js` fetches and caches card data, and looks up players' decks (exact printings when known).
+- `horde/js/decklist.js` parses pasted deck lists; `server/importers.js` imports Moxfield and Archidekt links (MTGGoldfish and TappedOut block automated requests, so paste their text export).
 - `server/` is the room server (Node + `ws`): `server.js`, protocol in `PROTOCOL.md`, tests with `node test.js`.
 
 Unofficial Fan Content permitted under the Fan Content Policy. Not approved/endorsed by Wizards.
