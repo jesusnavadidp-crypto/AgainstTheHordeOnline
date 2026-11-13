@@ -1,0 +1,5 @@
+node_modules/
+server/rooms.json
+server/rooms.json.tmp
+.DS_Store
+.claude/

@@ -1,0 +1,11 @@
+{
+  "name": "horde-table",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Animated online table for Magic: The Gathering Horde mode",
+  "scripts": {
+    "build": "npm --prefix server ci",
+    "start": "node server/server.js"
+  },
+  "engines": { "node": ">=20" }
+}

@@ -1,0 +1,77 @@
+// Card data from Scryfall (https://scryfall.com/docs/api), cached in localStorage.
+const KEY = 'horde.scryfall.v2'; // v2: adds `parts` (tokens a card makes)
+export const db = (() => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch { return {}; } })();
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(db)); } catch {} };
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+export function slim(c) {
+  const f0 = c.card_faces?.[0] || {};
+  const iu = c.image_uris || f0.image_uris || {};
+  return {
+    id: c.id, name: c.name,
+    type: c.type_line || f0.type_line || '',
+    text: c.oracle_text ?? (c.card_faces || []).map(f => `${f.name}\n${f.oracle_text || ''}`).join('\n\n'),
+    cost: c.mana_cost ?? f0.mana_cost ?? '',
+    power: c.power ?? f0.power ?? null,
+    toughness: c.toughness ?? f0.toughness ?? null,
+    cmc: c.cmc || 0,
+    img: iu.normal || null, large: iu.large || iu.normal || null, art: iu.art_crop || null,
+    token: /token/i.test(c.layout || '') || /\bToken\b/.test(c.type_line || ''),
+    // Tokens this card creates, from Scryfall's related-cards list.
+    parts: (c.all_parts || []).filter(p => p.component === 'token' && p.id !== c.id).map(p => p.id),
+  };
+}
+
+async function collection(identifiers) {
+  const out = [];
+  for (let i = 0; i < identifiers.length; i += 75) {
+    if (i) await sleep(120);
+    const res = await fetch('https://api.scryfall.com/cards/collection', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ identifiers: identifiers.slice(i, i + 75) }),
+    });
+    if (!res.ok) throw new Error('Scryfall error ' + res.status);
+    out.push(...(await res.json()).data);
+  }
+  return out;
+}
+
+/** Make sure every Scryfall id is in the db. */
+export async function ensure(ids) {
+  const need = [...new Set(ids)].filter(id => id && !db[id]);
+  if (!need.length) return;
+  for (const c of await collection(need.map(id => ({ id })))) db[c.id] = slim(c);
+  save();
+}
+
+/** Resolve plain-text deck entries (no ids) by name. Mutates entries. */
+export async function resolveNames(entries) {
+  const cards = entries.filter(e => !e.ref && e.type !== 'token');
+  const toks = entries.filter(e => !e.ref && e.type === 'token');
+  if (cards.length) {
+    const found = await collection([...new Set(cards.map(e => e.name))].map(name => ({ name })));
+    const byName = new Map(found.map(c => [c.name.toLowerCase(), c]));
+    for (const c of found) db[c.id] = slim(c);
+    for (const e of cards) {
+      const c = byName.get(e.name.toLowerCase()) || found.find(c => c.name.toLowerCase().startsWith(e.name.toLowerCase()));
+      if (c) e.ref = c.id;
+    }
+  }
+  for (const e of toks) {
+    const r = await searchTokens(`!"${e.name}"`);
+    if (r[0]) e.ref = r[0].id;
+    await sleep(120);
+  }
+  save();
+}
+
+export async function searchTokens(q) {
+  const url = 'https://api.scryfall.com/cards/search?unique=art&order=name&q=' + encodeURIComponent(`t:token ${q}`);
+  const res = await fetch(url);
+  if (!res.ok) return [];
+  const data = (await res.json()).data || [];
+  const out = data.slice(0, 40).map(slim);
+  for (const c of out) db[c.id] = c;
+  save();
+  return out;
+}

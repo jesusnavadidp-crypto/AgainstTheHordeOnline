@@ -1,0 +1,9 @@
+# Render blueprint: one free web service that serves the game and the online rooms.
+services:
+  - type: web
+    name: horde-table
+    runtime: node
+    plan: free
+    buildCommand: npm run build
+    startCommand: npm start
+    healthCheckPath: /
