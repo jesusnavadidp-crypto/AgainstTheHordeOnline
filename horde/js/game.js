@@ -366,6 +366,25 @@ export function reduce(s0, a) {
       if (ids.length) log(s, `Survivors attack the Horde with ${names(s, ids)} for ${a.damage}.`);
       return reduce(s, { t: 'DAMAGE_HORDE', n: Math.max(0, a.damage | 0) });
     }
+    case 'GY_TO_LIBRARY': {
+      // Cards picked at random by the client go from a graveyard into that library, which is then
+      // shuffled: `order` is the whole library afterwards (so every copy shuffles the same way).
+      const ids = [...new Set(a.ids || [])].filter(id => s.cards[id] && zoneOf(s, id) === 'graveyard');
+      if (!ids.length) break;
+      const zs = homeOf(s, s.cards[ids[0]]);
+      if (ids.some(id => homeOf(s, s.cards[id]) !== zs)) break;
+      const label = names(s, ids), owner = s.cards[ids[0]].owner;
+      for (const id of ids) put(s, id, 'library', 'bottom');
+      if (samePerm(a.order, zs.library)) zs.library = a.order;
+      log(s, `${label} shuffled from ${owner ? seatName(s, owner) + "'s" : 'the Horde\'s'} graveyard into the library.`);
+      break;
+    }
+    case 'SET_OPT': {
+      if (a.k !== 'tokensPersist') break;
+      s.opts[a.k] = !!a.v;
+      log(s, a.v ? 'Destroyed tokens now go to the graveyard.' : 'Destroyed tokens now cease to exist.');
+      break;
+    }
     case 'SHUFFLE': {
       // Only accept a reordering of the current library (it may have changed while the shuffle was in flight).
       const key = l => [...l].sort((x, y) => x - y).join();

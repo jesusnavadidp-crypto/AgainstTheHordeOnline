@@ -438,3 +438,87 @@ body.dock-compact .dock-body { grid-template-columns: minmax(0, 1fr); }
 .deck small.by { top: 10px; bottom: auto; }
 .deck span { font-size: clamp(14px, 1.25vw, 18px); overflow-wrap: anywhere; }
 .deck span { font-size: clamp(12px, 1.15vw, 18px); overflow-wrap: normal; hyphens: auto; }
+
+/* ---------- layout v2: explicit rows (robust to extra elements), solo vs split ---------- */
+body { grid-template-rows: 52px minmax(0, 1fr) auto auto; }
+body > .topbar { grid-row: 1; grid-column: 1; }
+body > .table { grid-row: 2; grid-column: 1; }
+body > .dock { grid-row: 3; grid-column: 1; }
+body > .hud { grid-row: 4; grid-column: 1; }
+body.split { grid-template-rows: 52px minmax(0, 1fr) minmax(0, 1fr) auto; }
+body.split .dock { max-height: none; min-height: 0; }
+.dock { position: relative; }
+body.split .dock-body { flex: 1; min-height: 0; }
+body.split .dock-board { min-height: 0; overflow: auto; }
+body.split .seat-hand-wrap { --cw: clamp(58px, 8.5vh, 104px); }
+.dock-board .row.lands { padding-top: 2px; }
+.dock-board .row:empty { display: none; }
+
+/* the Survivors' life total: centred where the Horde's attacks land */
+.survivor-life { position: absolute; left: 50%; top: 10px; transform: translateX(-50%); z-index: 6;
+  display: flex; gap: 10px; align-items: center; }
+.dock > .survivor-life { top: -34px; }
+.survivor-life .life { background: rgba(10, 14, 20, .92); box-shadow: 0 8px 30px rgba(0,0,0,.55); }
+.survivor-life .mini { background: rgba(10, 14, 20, .92); border-radius: 12px; padding: 6px 10px; }
+.survivor-life .mini:not(.on) { display: none; }
+body:not(.split) .board { padding-top: 84px; }
+body.split .dock-head { padding-top: 22px; }
+
+/* keyboard help */
+.keys-sheet { width: min(560px, 100%); }
+.keys-grid { display: grid; gap: 6px; overflow: auto; }
+.keys-grid h4 { margin: 8px 0 2px; font-family: Cinzel, serif; color: var(--gold2); letter-spacing: .06em; font-size: 13px; }
+.keys-grid p { margin: 0; display: grid; grid-template-columns: 150px 1fr; gap: 10px; align-items: center; font-size: 13px; color: var(--ink2); }
+.keys-grid kbd, .menu kbd { font: 600 11px Inter, sans-serif; border: 1px solid rgba(255,255,255,.25); border-bottom-width: 2px; border-radius: 5px; padding: 1px 6px; color: var(--ink); background: rgba(255,255,255,.06); }
+@media (max-width: 760px) { .dock > .survivor-life { top: -26px; } .survivor-life .life { padding: 2px 8px; } }
+@media (min-width: 761px) { .table { grid-template-columns: auto minmax(0, 1fr); } .rail { overflow: hidden; } }
+#bf-creatures, #bf-other, #seat-creatures, #seat-other, #seat-lands { justify-content: center; }
+/* split mode: give the Survivor battlefield most of the dock */
+body.split .dock { padding-top: 4px; gap: 4px; }
+body.split .dock-head { padding-top: 0; min-height: 30px; }
+body.split .seat-tab { padding: 2px 10px; font-size: 12px; flex-direction: row; gap: 8px; align-items: baseline; }
+body.split .dock > .survivor-life { top: -30px; }
+body.split .seat-hand-wrap { --cw: clamp(44px, 7vh, 96px); }
+#seat-hand .card + .card { margin-left: calc(var(--cw) * -0.18); }
+#seat-hand .card:hover { z-index: 3; }
+.board, .dock-board { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.15) transparent; }
+/* card groups flow side by side and wrap */
+.bf-flow { flex: 1; min-height: 0; display: flex; flex-wrap: wrap; justify-content: center; align-content: flex-start; gap: 14px 30px; }
+.bf-flow .row, .dock-board .row { flex: 0 1 auto; max-width: 100%; }
+.bf-flow .row.creatures { flex: 0 1 auto; padding-top: 0; }
+.dock-board { flex-direction: row; flex-wrap: wrap; justify-content: center; align-content: flex-start; gap: 12px 30px; }
+
+/* ---------- view size preferences ---------- */
+.view-menu { position: fixed; top: 56px; right: 16px; z-index: 95; width: 300px; display: none; flex-direction: column; gap: 12px; padding: 14px;
+  background: rgba(12,15,22,.98); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 20px 60px rgba(0,0,0,.6); }
+.view-menu.on { display: flex; }
+.view-menu .opt label { display: block; font-size: 12px; color: var(--ink2); margin-bottom: 6px; }
+.view-menu .seg button { flex: 1; }
+/* card size: hand rows, reveal and the attack lane follow it too */
+body.size-s { --cw: clamp(64px, 6vw, 96px); }
+body.size-l { --cw: clamp(100px, 9.5vw, 150px); }
+body.size-s .hand-wrap, body.size-s.split .seat-hand-wrap { --cw: clamp(44px, 6vh, 80px); }
+body.size-l .hand-wrap { --cw: clamp(76px, 6.5vw, 110px); }
+body.size-l.split .seat-hand-wrap { --cw: clamp(64px, 10vh, 130px); }
+body.size-l #reveal-lane { --cw: clamp(140px, 14vw, 210px); }
+body.size-l #stack-lane { --cw: clamp(200px, 20vw, 300px); }
+/* zoomed card */
+body.zoom-s #zoom { width: 240px; }
+body.zoom-m #zoom { width: 330px; }
+body.zoom-l #zoom { width: min(460px, calc((100vh - 220px) * .716)); }
+body.zoom-l .zoom-info { font-size: 14px; }
+@media (max-width: 760px) { body.zoom-l #zoom { width: min(340px, 90vw); } body.zoom-s #zoom { width: 180px; } }
+
+/* review fixes: phones keep their own layout; split life box reserve handled in JS */
+@media (max-width: 760px) {
+  body { grid-template-rows: 48px minmax(0, 1fr) auto auto; }
+  body.split { grid-template-rows: 48px minmax(0, 1fr) minmax(0, 1fr) auto; }
+  body:not(.split) .survivor-life { top: auto; bottom: 8px; }
+  body:not(.split) .board { padding-top: 10px; }
+  body.split .dock > .survivor-life { top: -26px; }
+  body.split .dock-head { padding-right: 0; }
+  .survivor-life { transform: translateX(-50%) scale(.85); }
+}
+
+.go.alt { background: rgba(255,255,255,.06); border-color: var(--line); color: var(--ink); }
+.tok-persist { font-size: 13px; color: var(--ink2); display: flex; gap: 8px; align-items: center; }

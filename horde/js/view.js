@@ -1,6 +1,6 @@
 // Board renderer. Cards are keyed DOM elements that persist between renders;
 // every move between zones is animated with FLIP (First-Last-Invert-Play).
-import { PILES, canAttack, survivorSick } from './game.js?v=9';
+import { PILES, canAttack, survivorSick } from './game.js?v=13';
 
 const els = new Map();          // entity key -> element
 let prevZone = {};              // card id -> zone at last render
@@ -27,17 +27,18 @@ export function power(s, db, c) {
   };
 }
 
-function entities(s) {
+function entities(s, db) {
   const out = { 'bf-creatures': [], 'bf-other': [], 'attack-lane': [], 'reveal-lane': [], 'stack-lane': [], 'hand-row': [],
-    'seat-creatures': [], 'seat-other': [], 'seat-hand': [] };
+    'seat-creatures': [], 'seat-lands': [], 'seat-other': [], 'seat-hand': [] };
   const groups = new Map();
   // The Survivor board shown in the dock (yours, or another player's).
   const seat = s.seats?.[view.seat];
   if (seat) {
     for (const id of seat.zones.battlefield) {
       const c = s.cards[id];
-      const cont = c.creature ? 'seat-creatures' : 'seat-other';
-      if (c.token) {
+      const land = !c.creature && /\bLand\b/.test(db[c.ref]?.type || '');
+      const cont = c.creature ? 'seat-creatures' : land ? 'seat-lands' : 'seat-other';
+      if (c.token || land) {           // identical tokens and lands stack (Forest ×5)
         const key = `g:${seat.id}:${c.ref}|${+c.tapped}|${c.counters}|${+c.attacking}|${c.blocking || 0}`;
         let g = groups.get(key);
         if (!g) { g = { key, ids: [], cont, group: true }; groups.set(key, g); out[cont].push(g); }
@@ -232,7 +233,7 @@ export function render(s, db, opts = {}) {
   for (const el of els.values()) { el.style.transform = ''; el.style.opacity = ''; } // drop offsets set by drag & drop
 
   // Build / reuse elements
-  const ents = entities(s);
+  const ents = entities(s, db);
   const seen = new Set();
   for (const cont in ents) {
     const host = document.getElementById(cont);
@@ -255,6 +256,7 @@ export function render(s, db, opts = {}) {
   document.body.classList.toggle('show-spotlight', s.zones.reveal.length + s.zones.stack.length > 0);
   document.body.classList.toggle('show-attack', s.zones.battlefield.some(id => s.cards[id].attacking));
 
+  opts.beforeMeasure?.();          // e.g. resize cards to fit the space, before measuring where they land
   // LAST + INVERT + PLAY
   const pilesAfter = pileRects();
   for (const [key, el] of els) {

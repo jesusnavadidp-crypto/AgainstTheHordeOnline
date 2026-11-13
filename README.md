@@ -44,6 +44,9 @@ Free-tier notes: the server sleeps after 15 minutes with no one playing and take
 - **Community Hordes:** nine more Horde decks from against-the-horde.com: Ooze Horde (Zayn Harris), The Fire Nation (Fondant), Arachnophobia (Gabriel), Merfolk, Squirrel and Rats - Plague Avatar (PiouPiou), Sleep with the Fishes (Jay), Walls (Hoken) and Now that's a lot of gobbo (Lady Stardust). Each links back to its original page. Image-only custom cards from the originals aren't included.
 - **Saved Hordes:** name a custom Horde list and it stays on the setup screen.
 - **Online rooms:** everyone sees and controls the same table live, with all animations. The log shows who did what, undo works for the whole room, and refreshing puts you back in your seat. Rooms survive a server restart and expire after 12 hours with nobody connected.
+- **Space and size:** solo, the Horde fills the table; with your deck the screen splits 50/50. Cards resize to fit, and **View** offers small/medium/large cards and zoomed card. Your board stacks identical lands and wraps into rows.
+- **Quick actions:** Mill X (next to Deal), shuffle X random cards from a graveyard back into the library (click the graveyard), and a switch in the Tokens panel so destroyed tokens go to the graveyard.
+- **Keyboard:** Space/Enter main button, Ctrl/⌘ Z undo, N draw, U untap all, K tokens, L log, and on the card under the mouse T tap, D destroy, E exile, H hand, P play, A attack, B block, +/− counters. Press ? for the list.
 - **Other:** hover to zoom, graveyard/exile/library viewers, undo (Ctrl+Z), game log, autosave (offline), and Space as the main action.
 
 ## Code layout

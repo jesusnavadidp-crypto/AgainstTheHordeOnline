@@ -108,7 +108,7 @@ const isState = (s) => s && typeof s === 'object' && !Array.isArray(s) && s.zone
 const ACTIONS = new Set(['MOVE', 'REVEAL', 'DRAW', 'GATHER_CASTS', 'CAST_REVEALED', 'RESOLVE_STACK', 'START_HORDE_TURN', 'PHASE',
   'BEGIN_COMBAT', 'ATTACK', 'BLOCK', 'END_COMBAT', 'END_SURVIVOR_TURN', 'LIFE', 'POISON', 'HORDE_LIFE', 'MILL', 'DAMAGE_HORDE',
   'TAP', 'COUNTER', 'CREATE', 'SHUFFLE', 'ANTHEM', 'NOTE',
-  'SEAT', 'SEAT_DECK', 'SEAT_DRAW', 'SEAT_SHUFFLE', 'SEAT_MULLIGAN', 'UNTAP_ALL', 'SURVIVOR_ATTACK']);
+  'SEAT', 'SEAT_DECK', 'SEAT_DRAW', 'SEAT_SHUFFLE', 'SEAT_MULLIGAN', 'UNTAP_ALL', 'SURVIVOR_ATTACK', 'GY_TO_LIBRARY', 'SET_OPT']);
 const int = (v, lo, hi) => Number.isInteger(v) && v >= lo && v <= hi;
 const num = (v) => typeof v === 'number' && Number.isFinite(v) && Math.abs(v) <= 1e6;
 const str = (v, max = 500) => typeof v === 'string' && v.length <= max;
@@ -124,6 +124,7 @@ function validAction(a) {
   if ('n' in a && !int(a.n, 0, 500)) return false;
   for (const k of ['id', 'by']) if (k in a && a[k] !== null && !int(a[k], 0, 1e7)) return false;
   if ('hand' in a && !int(a.hand, 0, 30)) return false;
+  if (a.t === 'SET_OPT' && !(a.k === 'tokensPersist' && typeof a.v === 'boolean')) return false;
   if ('setupLeft' in a && !int(a.setupLeft, 0, 3)) return false;
   for (const k of ['to', 'pos', 'phase', 'from', 'ref', 'name', 'msg', 'deckName']) if (k in a && !str(a[k])) return false;
   // Seat ids are client ids (UUIDs, or 'local'): never anything like __proto__.

@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=9">
+<link rel="stylesheet" href="styles.css?v=13">
 </head>
 <body>
 
@@ -20,6 +20,8 @@
     <button class="tb" id="btn-deck">Your deck</button>
     <button class="tb accent" id="btn-tokens">✦ Tokens</button>
     <button class="tb" id="btn-log">Log</button>
+    <button class="tb" id="btn-view" title="Card and zoom size">View</button>
+    <button class="tb" id="btn-keys" title="Keyboard shortcuts (?)">Keys</button>
     <button class="tb" id="btn-undo" title="Undo (Ctrl+Z)">Undo</button>
     <button class="tb" id="btn-menu">New game</button>
   </div>
@@ -43,14 +45,27 @@
       <span class="lane-label">Horde hand</span>
       <div class="row" id="hand-row"></div>
     </div>
-    <div class="row other" id="bf-other"></div>
-    <div class="row creatures" id="bf-creatures"></div>
+    <div class="bf-flow">
+      <div class="row other" id="bf-other"></div>
+      <div class="row creatures" id="bf-creatures"></div>
+    </div>
     <div class="empty-hint" id="empty-hint">The Horde gathers… Survivors get 3 setup turns.</div>
     <div class="attack-zone">
       <span class="lane-label">Attacking</span>
       <div class="row" id="attack-lane"></div>
     </div>
   </section>
+
+  <!-- Survivors' life: centred where attacks land (top of the table solo, on the seam with your board) -->
+  <div class="survivor-life" id="survivor-life">
+    <div class="life" id="life-box">
+      <span class="life-label">Survivors</span>
+      <button class="step" data-life="-1">−</button>
+      <span class="life-num" id="life-num">20</span>
+      <button class="step" data-life="1">+</button>
+    </div>
+    <div class="mini" id="poison-box"><span>Poison</span><button class="step sm" data-poison="-1">−</button><b id="poison-num">0</b><button class="step sm" data-poison="1">+</button></div>
+  </div>
 
   <div class="spotlight">
     <div class="spot-title" id="spot-title"></div>
@@ -74,8 +89,9 @@
   <div class="dock-body">
     <div class="dock-piles" id="dock-piles"></div>
     <div class="dock-board" data-drop="s:battlefield">
-      <div class="row other" id="seat-other"></div>
       <div class="row creatures" id="seat-creatures"></div>
+      <div class="row other" id="seat-other"></div>
+      <div class="row lands" id="seat-lands"></div>
       <div class="dock-empty" id="dock-empty"></div>
     </div>
   </div>
@@ -84,13 +100,7 @@
 
 <footer class="hud">
   <div class="hud-life">
-    <div class="life" id="life-box">
-      <span class="life-label">Survivors</span>
-      <button class="step" data-life="-1">−</button>
-      <span class="life-num" id="life-num">20</span>
-      <button class="step" data-life="1">+</button>
-    </div>
-    <div class="mini" id="poison-box"><span>Poison</span><button class="step sm" data-poison="-1">−</button><b id="poison-num">0</b><button class="step sm" data-poison="1">+</button></div>
+
     <div class="mini" id="hlife-box"><span>Horde life</span><button class="step sm" data-hlife="-1">−</button><b id="hlife-num">20</b><button class="step sm" data-hlife="1">+</button></div>
   </div>
   <div class="hud-center">
@@ -107,10 +117,45 @@
     <div class="dmg-row">
       <button class="step" data-dmg="-1">−</button><input id="dmg-num" type="number" min="1" value="1"><button class="step" data-dmg="1">+</button>
       <button class="go" id="btn-dmg">Deal</button>
+      <button class="go alt" id="btn-mill" title="Mill this many cards (ignores Horde life)">Mill</button>
     </div>
     <span class="sub" id="dmg-sub">Each damage mills one card</span>
   </div>
 </footer>
+
+<div class="modal" id="keys-help">
+  <div class="modal-card keys-sheet">
+    <div class="drawer-head"><h3>Keyboard shortcuts</h3><button class="x" data-close>✕</button></div>
+    <div class="keys-grid">
+      <h4>Anywhere</h4>
+      <p><kbd>Space</kbd> / <kbd>Enter</kbd><span>Main button (next step, take damage, end turn)</span></p>
+      <p><kbd>Ctrl/⌘ Z</kbd><span>Undo</span></p>
+      <p><kbd>Esc</kbd><span>Close menus and panels</span></p>
+      <p><kbd>N</kbd><span>Draw a card (your deck)</span></p>
+      <p><kbd>U</kbd><span>Untap all your permanents</span></p>
+      <p><kbd>K</kbd><span>Tokens panel</span> </p>
+      <p><kbd>L</kbd><span>Game log</span></p>
+      <p><kbd>?</kbd><span>This list</span></p>
+      <h4>Hovering a card</h4>
+      <p><kbd>T</kbd><span>Tap / untap</span></p>
+      <p><kbd>D</kbd><span>Destroy (to graveyard)</span></p>
+      <p><kbd>E</kbd><span>Exile</span></p>
+      <p><kbd>H</kbd><span>Return to hand</span></p>
+      <p><kbd>P</kbd><span>Play it (from your hand)</span></p>
+      <p><kbd>A</kbd><span>Attack the Horde with it (your turn)</span></p>
+      <p><kbd>B</kbd><span>Block it (a Horde attacker)</span></p>
+      <p><kbd>+</kbd> / <kbd>−</kbd><span>+1/+1 or −1/−1 counter</span></p>
+      <h4>In a menu</h4>
+      <p><kbd>letter</kbd><span>The item showing that letter</span></p>
+    </div>
+  </div>
+</div>
+
+<div class="view-menu" id="view-menu">
+  <div class="opt"><label>Card size</label><div class="seg" data-pref="card"><button data-v="s">Small</button><button data-v="m">Medium</button><button data-v="l">Large</button></div></div>
+  <div class="opt"><label>Zoomed card</label><div class="seg" data-pref="zoom"><button data-v="s">Small</button><button data-v="m">Medium</button><button data-v="l">Large</button></div></div>
+  <p class="drawer-sub">Saved in this browser. Large cards scroll instead of shrinking on a busy board.</p>
+</div>
 
 <div id="fx"></div>
 <div id="vignette"></div>
@@ -120,6 +165,7 @@
 
 <aside class="drawer" id="drawer-tokens">
   <div class="drawer-head"><h3>Tokens</h3><button class="x" data-close>✕</button></div>
+  <label class="toggle tok-persist"><input type="checkbox" id="tok-persist"> Destroyed tokens go to the graveyard</label>
   <div class="seg tok-owner" id="tok-owner"><button data-owner="horde" class="on">For the Horde</button><button data-owner="me">For me</button></div>
   <p class="drawer-sub">Create tokens for the Horde. Click a token stack on the board to destroy, tap or move several at once.</p>
   <div class="search"><input id="token-q" placeholder="Search any token (e.g. Zombie, Treasure, 3/3 Beast)…"><button class="go" id="token-go">Search</button></div>
@@ -197,6 +243,6 @@ Also accepts the against-the-horde.com export format."></textarea>
   </div>
 </div>
 
-<script type="module" src="js/app.js?v=9"></script>
+<script type="module" src="js/app.js?v=13"></script>
 </body>
 </html>

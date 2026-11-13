@@ -1,10 +1,10 @@
-import { DECKS, parseDeck, buildLibrary, shuffle } from './deck.js?v=9';
-import { db, ensure, resolveNames, searchTokens, resolveDeck } from './scryfall.js?v=9';
-import { parseDecklist } from './decklist.js?v=9';
-import { initState, reduce, zoneOf, canAttack, status, PILES, survivorSick } from './game.js?v=9';
-import { render, resetView, power, esc, hasKw } from './view.js?v=9';
-import { stampLog } from './stamp.js?v=9';
-import { connectNet, clientId } from './net.js?v=9';
+import { DECKS, parseDeck, buildLibrary, shuffle } from './deck.js?v=13';
+import { db, ensure, resolveNames, searchTokens, resolveDeck } from './scryfall.js?v=13';
+import { parseDecklist } from './decklist.js?v=13';
+import { initState, reduce, zoneOf, canAttack, status, PILES, survivorSick } from './game.js?v=13';
+import { render, resetView, power, esc, hasKw } from './view.js?v=13';
+import { stampLog } from './stamp.js?v=13';
+import { connectNet, clientId } from './net.js?v=13';
 
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
@@ -258,6 +258,7 @@ async function handleNet(m) {
       online.seq = m.seq; online.canUndo = m.canUndo;
       const mine = pending.has(m.nonce);
       if (!mine && m.a.t === 'END_COMBAT' && state.phase === 'combat') await strikeAnimation();
+      if (!mine && m.a.t === 'SURVIVOR_ATTACK') { banner('THE SURVIVORS STRIKE'); await survivorStrike(m.a.ids || []); }
       if (m.a.t === 'CREATE' && !db[m.a.ref]) await ensure([m.a.ref]).catch(() => {});
       if (m.a.t === 'SEAT_DECK') await ensure([...new Set(m.a.entries.map(e => e.ref))]).catch(() => {});
       const prev = state;
@@ -454,11 +455,22 @@ function hordeStalled() { return state?.phase === 'horde' && !busy && Date.now()
 // Strike animations hold the card at the impact point (fill: forwards) until the board
 // redraws after damage; renderAll then cancels them so no card keeps that offset.
 let strikeAnims = [];
-async function strikeAnimation() {
-  const target = $('#life-box').getBoundingClientRect();
-  const tx = target.left + target.width / 2, ty = target.top + target.height / 2;
+function strikeAnimation() {
   const els = [...document.querySelectorAll('#attack-lane .card')]
     .filter(el => el._ids?.some(id => state.cards[id] && !state.cards[id].blocked));
+  return strikeAt(els, $('#life-box'));
+}
+// The Survivors' attackers (on the board being shown) lunge at the Horde's library.
+function survivorStrike(ids) {
+  const lib = $('#pile-library .pile-top');
+  const els = [...document.querySelectorAll('.dock-board .card.attacking')].filter(el => !ids || el._ids?.some(i => ids.includes(i)));
+  if (!els.length) { const r = lib.getBoundingClientRect(); impact(r.left + r.width / 2, r.top + r.height / 2, lib); return Promise.resolve(); }
+  return strikeAt(els, lib);
+}
+async function strikeAt(els, targetEl) {
+  if (!targetEl || !els.length) return;
+  const target = targetEl.getBoundingClientRect();
+  const tx = target.left + target.width / 2, ty = target.top + target.height / 2;
   if (!els.length || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   const DUR = 620, GAP = Math.min(140, 700 / els.length);
   els.forEach((el, i) => {
@@ -476,18 +488,18 @@ async function strikeAnimation() {
     }
     el.style.zIndex = 50;
     strikeAnims.push({ el, anim: el.animate(frames, { duration: DUR, delay: i * GAP, fill: 'forwards' }) });
-    setTimeout(() => impact(tx, ty), i * GAP + DUR);
+    setTimeout(() => impact(tx, ty, targetEl), i * GAP + DUR);
   });
   await wait((els.length - 1) * GAP + DUR + 60);
 }
-function impact(x, y) {
+function impact(x, y, hitEl = $('#life-box')) {
   const fx = document.createElement('div');
   fx.className = 'impact';
   fx.style.left = x + 'px'; fx.style.top = y + 'px';
   document.body.appendChild(fx);
   fx.animate([{ transform: 'translate(-50%,-50%) scale(.2)', opacity: 1 }, { transform: 'translate(-50%,-50%) scale(1.8)', opacity: 0 }],
     { duration: 420, easing: 'ease-out' }).onfinish = () => fx.remove();
-  const box = $('#life-box');
+  const box = hitEl.closest('.life, .pile') || hitEl;
   box.classList.remove('shake'); void box.offsetWidth; box.classList.add('shake');
 }
 
@@ -503,25 +515,29 @@ async function resolveCombat() {
 
 function renderAll(prev) {
   const s = state;
+  // Classes and boxes that change the layout come first, so card sizes are fitted to the final space.
+  document.body.className = document.body.className.replace(/\bphase-\S+/g, '').trim();
+  document.body.classList.add('phase-' + s.phase);
+  document.body.classList.toggle('has-board', s.zones.battlefield.length + s.zones.hand.length > 0 || s.turn > 0);
+  $('#poison-box').classList.toggle('on', s.deck.poison || s.poison > 0);
+  $('#hlife-box').classList.toggle('on', s.hordeLife !== null);
   renderDock(s);
-  render(s, db, { me: mySeat(), seat: viewSeat || mySeat() });
+  layoutTable();
+  render(s, db, { me: mySeat(), seat: viewSeat || mySeat(), beforeMeasure: fitBoards });
   strikeAnims = strikeAnims.filter(({ el, anim }) => {
     if (anim.playState !== 'finished') return true;   // still flying: leave it
     anim.cancel(); el.style.zIndex = ''; return false;
   });
-  document.body.className = document.body.className.replace(/\bphase-\S+/g, '').trim();
-  document.body.classList.add('phase-' + s.phase);
-  document.body.classList.toggle('has-board', s.zones.battlefield.length + s.zones.hand.length > 0 || s.turn > 0);
 
   // life
   const ln = $('#life-num');
   ln.textContent = s.life;
   ln.classList.toggle('low', s.life <= Math.max(5, s.opts.life * 0.25));
   if (prev && prev.life !== s.life) floatNum(ln, s.life - prev.life);
-  $('#poison-box').classList.toggle('on', s.deck.poison || s.poison > 0);
+
   $('#poison-num').textContent = s.poison;
   if (prev && prev.poison !== s.poison) floatNum($('#poison-num'), s.poison - prev.poison, true);
-  $('#hlife-box').classList.toggle('on', s.hordeLife !== null);
+
   $('#hlife-num').textContent = s.hordeLife ?? '';
   $('#anthem-num').textContent = (s.anthem >= 0 ? '+' : '') + s.anthem;
   $('#dmg-sub').textContent = s.hordeLife ? `Hits Horde life first (${s.hordeLife})` : `Mills 1 card per damage · ${s.zones.library.length} left`;
@@ -687,7 +703,7 @@ async function primary() {
 $('#btn-primary').addEventListener('click', primary);
 
 /* =================== HUD controls =================== */
-document.querySelector('.hud').addEventListener('click', e => {
+function hudClick(e) {
   const b = e.target.closest('button');
   if (!b || !state) return;
   const mult = e.shiftKey ? 5 : 1;
@@ -696,10 +712,13 @@ document.querySelector('.hud').addEventListener('click', e => {
   else if (b.dataset.hlife) dispatch({ t: 'HORDE_LIFE', d: +b.dataset.hlife * mult });
   else if (b.dataset.anthem) dispatch({ t: 'ANTHEM', d: +b.dataset.anthem });
   else if (b.dataset.dmg) { const i = $('#dmg-num'); i.value = Math.max(1, (+i.value || 1) + +b.dataset.dmg * mult); }
+  else if (b.id === 'btn-mill') { const n = Math.max(1, +$('#dmg-num').value || 1); dispatch({ t: 'MILL', n }); $('#dmg-num').value = 1; }
   else if (b.id === 'btn-dmg') { const n = Math.max(1, +$('#dmg-num').value || 1); dispatch({ t: 'DAMAGE_HORDE', n }); $('#dmg-num').value = 1; }
   else if (b.id === 'btn-block-all') dispatch({ t: 'BLOCK', ids: state.zones.battlefield.filter(id => state.cards[id].attacking), v: true });
   else if (b.id === 'btn-block-none') dispatch({ t: 'BLOCK', ids: state.zones.battlefield.filter(id => state.cards[id].attacking), v: false });
-});
+}
+document.querySelector('.hud').addEventListener('click', hudClick);
+$('#survivor-life').addEventListener('click', hudClick);
 $('#life-box').addEventListener('wheel', e => { e.preventDefault(); if (state) dispatch({ t: 'LIFE', d: e.deltaY < 0 ? 1 : -1 }); }, { passive: false });
 
 /* =================== card actions =================== */
@@ -852,7 +871,21 @@ $('#pile-library').addEventListener('click', e => {
     ],
   });
 });
-$('#pile-graveyard').addEventListener('click', () => state && openViewer('graveyard'));
+// Graveyard menu: look, or shuffle X random cards back into the library.
+function pickRandom(list, k) { return shuffle(list).slice(0, k); }
+function graveyardMenu(e, seatId) {
+  const zs = seatId ? state.seats?.[seatId]?.zones : state.zones;
+  if (!zs) return;
+  const n = zs.graveyard.length;
+  const items = [{ label: 'Look at the graveyard', fn: () => openViewer(seatId ? { seat: seatId, zone: 'graveyard' } : 'graveyard') }];
+  if (n) items.push({ label: 'Shuffle at random into the library', hint: 'X cards', fn: k => {
+    const z = seatId ? state.seats[seatId].zones : state.zones;          // read again: it may have changed
+    const ids = pickRandom(z.graveyard, Math.min(k, z.graveyard.length));
+    dispatch({ t: 'GY_TO_LIBRARY', ids, order: shuffle([...z.library, ...ids]) });
+  } });
+  openMenu(e.clientX, e.clientY, { title: seatId ? `${state.seats[seatId].name}'s graveyard` : 'Horde graveyard', max: Math.max(1, n), items });
+}
+$('#pile-graveyard').addEventListener('click', e => { if (state && !busy) graveyardMenu(e, null); });
 $('#pile-exile').addEventListener('click', () => state && openViewer('exile'));
 
 /* zone viewer */
@@ -943,11 +976,13 @@ function tokenRow(ref, from) {
     <div><div class="nm">${esc(d.name)}</div>${from ? `<div class="from">from ${esc(from)}</div>` : ''}<div class="ty">${esc(pt + d.type.replace(/^Token /, ''))}${onBoard ? ` · <b style="color:var(--gold2)">${onBoard} in play</b>` : ''}</div></div>
     <div class="btns"><button data-n="-1" title="Remove one">−1</button><button data-n="1">+1</button><button data-n="5">+5</button><button data-n="10">+10</button></div></div>`;
 }
+$('#tok-persist').addEventListener('change', e => { if (state) dispatch({ t: 'SET_OPT', k: 'tokensPersist', v: e.target.checked }); });
 $('#tok-owner').addEventListener('click', e => {
   const b = e.target.closest('[data-owner]');
   if (b) { tokOwner = b.dataset.owner; renderTokens(); }
 });
 function renderTokens() {
+  $('#tok-persist').checked = !!state.opts.tokensPersist;
   for (const b of $$('#tok-owner [data-owner]')) b.classList.toggle('on', b.dataset.owner === tokOwner);
   const deckRefs = state.deck.tokenRefs || [];
   const boardRefs = [...new Set(state.zones.battlefield.map(id => state.cards[id]).filter(c => c.token).map(c => c.ref))].filter(r => !deckRefs.includes(r));
@@ -989,6 +1024,77 @@ async function doTokenSearch() {
 }
 $('#token-go').addEventListener('click', doTokenSearch);
 $('#token-q').addEventListener('keydown', e => { if (e.key === 'Enter') doTokenSearch(); });
+
+/* =================== view size preferences =================== */
+const VIEW_KEY = 'horde.view';
+let viewPref = { card: 'm', zoom: 'm' };
+try { Object.assign(viewPref, JSON.parse(localStorage.getItem(VIEW_KEY)) || {}); } catch {}
+// Card size: [min, max] card width for the Horde board, and for your board.
+const CARD_SIZES = { s: { horde: [44, 170], seat: [36, 130] }, m: { horde: [58, 200], seat: [44, 150] }, l: { horde: [96, 240], seat: [78, 180] } };
+function applyViewPref() {
+  document.body.classList.remove('size-s', 'size-m', 'size-l', 'zoom-s', 'zoom-m', 'zoom-l');
+  document.body.classList.add('size-' + viewPref.card, 'zoom-' + viewPref.zoom);
+  for (const seg of document.querySelectorAll('#view-menu [data-pref]'))
+    for (const b of seg.children) b.classList.toggle('on', b.dataset.v === viewPref[seg.dataset.pref]);
+}
+$('#btn-view').addEventListener('click', e => { e.stopPropagation(); applyViewPref(); $('#view-menu').classList.toggle('on'); });
+$('#view-menu').addEventListener('click', e => {
+  e.stopPropagation();
+  const b = e.target.closest('[data-v]');
+  if (!b) return;
+  viewPref[b.parentElement.dataset.pref] = b.dataset.v;
+  try { localStorage.setItem(VIEW_KEY, JSON.stringify(viewPref)); } catch {}
+  applyViewPref();
+  if (state) renderAll(state);
+});
+document.addEventListener('click', e => { if (!e.target.closest('#view-menu')) $('#view-menu').classList.remove('on'); });
+applyViewPref();
+
+/* =================== layout: space and card size =================== */
+// Solo (no Survivor board in use): the Horde gets the whole table and the life total sits at
+// its top. With a Survivor board: 50/50 split, life total on the seam between them.
+function layoutTable() {
+  const split = !document.body.classList.contains('dock-compact');
+  document.body.classList.toggle('split', split);
+  const life = $('#survivor-life');
+  const home = split ? $('#dock') : $('.table');
+  if (life.parentElement !== home) home.prepend(life);
+}
+
+// Pick the biggest card size at which all cards of these groups fit in `box`. The groups flow
+// side by side and wrap (see .bf-flow / .dock-board), so treat them as one sequence of cards.
+function fitFlow(box, rows, reserve, min, max) {
+  const W = box.clientWidth - 28, H = (box.clientHeight - reserve) * 0.96;   // small safety margin
+  const live = rows.filter(r => r.children.length);
+  const n = live.reduce((k, r) => k + r.children.length, 0) + Math.max(0, live.length - 1) * 0.6;   // gaps between groups
+  const tapped = live.reduce((k, r) => k + r.querySelectorAll('.card.tapped').length, 0);
+  if (!n || W <= 0 || H <= 0) { for (const r of rows) r.style.removeProperty('--cw'); return; }
+  const gap = 12;
+  let cw = max;
+  for (; cw > min; cw -= 2) {
+    const w = cw * (1 + .42 * tapped / n) + gap;                 // tapped cards are rotated, so wider
+    const per = Math.max(1, Math.floor((W + gap) / w));
+    const lines = Math.ceil(n / per) + Math.max(0, live.length - 1) * 0.35;   // groups may break lines early
+    if (lines * (cw * 88 / 63 + 18) <= H) break;
+  }
+  for (const r of rows) r.style.setProperty('--cw', cw + 'px');
+}
+function fitBoards() {
+  // The Horde's piles: as big as the table's height allows (3 piles + labels).
+  const phone = innerWidth <= 760;
+  const rail = $('.rail');
+  if (phone) rail.style.removeProperty('--cw');
+  else rail.style.setProperty('--cw', Math.max(44, Math.min(112, Math.floor((rail.clientHeight - 3 * 34 - 24) / 3 / 1.4))) + 'px');
+  const board = $('.board');
+  const vis = el => (el && el.offsetParent ? el.offsetHeight + 10 : 0);
+  const split = document.body.classList.contains('split');
+  const sz = CARD_SIZES[viewPref.card] || CARD_SIZES.m;
+  fitFlow(board, [$('#bf-creatures'), $('#bf-other')],
+    24 + vis($('.hand-wrap')) + vis($('.attack-zone')) + (phone ? 0 : split ? 34 : 84), sz.horde[0], split ? sz.horde[1] * 0.75 : sz.horde[1]);
+  if (split) fitFlow($('.dock-board'), [$('#seat-creatures'), $('#seat-other'), $('#seat-lands')], 30, sz.seat[0], sz.seat[1]);
+}
+let resizeT = 0;
+addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(() => state && $('#setup').classList.contains('off') && renderAll(state), 150); });
 
 /* =================== Survivor boards =================== */
 const SEAT_LABEL = { library: 'Library', graveyard: 'Graveyard', exile: 'Exile', command: 'Command', hand: 'Hand' };
@@ -1048,6 +1154,7 @@ $('#dock-piles').addEventListener('click', e => {
   const [, seatId, zone] = el.dataset.pile.split(':');
   const seat = state.seats?.[seatId];
   if (!seat || zone === 'hand') return;
+  if (zone === 'graveyard' && seatId === mySeat()) { graveyardMenu(e, seatId); return; }
   if (zone !== 'library') { openViewer({ seat: seatId, zone }); return; }
   if (seatId !== mySeat()) return;                     // someone else's library stays private
   const n = seat.zones.library.length;
@@ -1087,7 +1194,9 @@ async function survivorAttack() {
   const damage = survivorAttackDamage();
   const tap = ids.filter(id => !hasKw(db, state.cards[id], 'vigilance'));
   banner('THE SURVIVORS STRIKE');
-  await dispatch({ t: 'SURVIVOR_ATTACK', ids, tap, damage });
+  busy = true;
+  try { await survivorStrike(); await dispatch({ t: 'SURVIVOR_ATTACK', ids, tap, damage }); }
+  finally { busy = false; renderAll(state); }
 }
 
 // Buttons on the dock and in the deck drawer.
@@ -1309,10 +1418,57 @@ document.addEventListener('pointerup', e => {
 });
 
 /* =================== keyboard =================== */
+function hoveredCard() { const l = document.querySelectorAll('.card:hover'); return l[l.length - 1] || null; }
+function toggleKeys() { $('#keys-help').classList.toggle('on'); }
+$('#btn-keys').addEventListener('click', toggleKeys);
+
+// Letter keys: the open menu's item with that letter, else an action on the card under the mouse.
+function letterKey(k, e) {
+  if (menuState) {
+    const i = menuState.items.findIndex(it => it !== 'sep' && it.kbd === k.toUpperCase());
+    if (i >= 0) { $(`#menu [data-i="${i}"]`)?.click(); return true; }
+    return false;
+  }
+  const el = hoveredCard();
+  if (el?._ids && !busy) {
+    const id = el._ids[0], c = state.cards[id];
+    if (!c) return false;
+    const zone = zoneOf(state, id);
+    const mv = to => dispatch({ t: 'MOVE', ids: [id], to });
+    switch (k) {
+      case 't': if (zone === 'battlefield') { dispatch({ t: 'TAP', ids: [id], v: !c.tapped }); return true; } break;
+      case 'd': if (['battlefield', 'hand'].includes(zone)) { mv('graveyard').then(afterResolve); return true; } break;
+      case 'e': if (['battlefield', 'hand', 'graveyard'].includes(zone)) { mv('exile').then(afterResolve); return true; } break;
+      case 'h': if (['battlefield', 'graveyard', 'exile'].includes(zone)) { mv('hand'); return true; } break;
+      case 'p': if (c.owner && (zone === 'hand' || zone === 'command')) { castIds([id]); return true; } break;
+      case 'a': if (c.owner && c.creature && zone === 'battlefield' && state.phase === 'survivors') { dispatch({ t: 'ATTACK', ids: [id], v: !c.attacking }, false); return true; } break;
+      case 'b': if (!c.owner && c.attacking && state.phase === 'combat') { const r = el.getBoundingClientRect(); chooseBlocker(id, r.left + r.width / 2, r.top + r.height / 2); return true; } break;
+      case '+': case '=': if (c.creature && zone === 'battlefield') { dispatch({ t: 'COUNTER', ids: [id], d: 1 }); return true; } break;
+      case '-': if (c.creature && zone === 'battlefield') { dispatch({ t: 'COUNTER', ids: [id], d: -1 }); return true; } break;
+    }
+  }
+  const me = mySeat();
+  if (busy) return false;
+  switch (k) {
+    case 'n': if (state.seats?.[me]?.deckName) { dispatch({ t: 'SEAT_DRAW', seat: me, n: 1 }); return true; } break;
+    case 'u': if (state.seats?.[me]?.deckName) { dispatch({ t: 'UNTAP_ALL', seat: me }); return true; } break;
+    case 'k': toggleDrawer('#drawer-tokens'); return true;
+    case 'l': toggleDrawer('#drawer-log'); return true;
+  }
+  return false;
+}
+
 document.addEventListener('keydown', e => {
-  if (e.target.matches('input, textarea')) return;
+  if (e.target.matches('input, textarea, select')) return;
   if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); undo(); return; }
-  if (e.key === 'Escape') { closeMenu(); hideZoom(); $$('.drawer.on, #viewer.on').forEach(x => x.classList.remove('on')); return; }
+  if (e.key === 'Escape') { closeMenu(); hideZoom(); $$('.drawer.on, #viewer.on, #keys-help.on, #view-menu.on').forEach(x => x.classList.remove('on')); return; }
+  if ((e.key === '?' || (e.key === '/' && e.shiftKey)) && $('#setup').classList.contains('off')) { toggleKeys(); return; }
+  // While a panel or dialog is open, or a key is held down, game keys do nothing (menus still take their letters).
+  if (e.repeat) return;
+  if (!menuState && document.querySelector('.modal.on, .drawer.on, #viewer.on, #result.on, #view-menu.on')) return;
+  if (!e.metaKey && !e.ctrlKey && !e.altKey && state && $('#setup').classList.contains('off') && /^[a-z+=-]$/i.test(e.key)) {
+    if (letterKey(e.key.toLowerCase(), e)) { e.preventDefault(); return; }
+  }
   if ((e.key === ' ' || e.key === 'Enter') && state && $('#setup').classList.contains('off') && !$('#result').classList.contains('on')) {
     e.preventDefault(); primary();
   }
