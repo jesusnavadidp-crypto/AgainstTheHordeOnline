@@ -108,7 +108,7 @@ const isState = (s) => s && typeof s === 'object' && !Array.isArray(s) && s.zone
 const ACTIONS = new Set(['MOVE', 'REVEAL', 'DRAW', 'GATHER_CASTS', 'CAST_REVEALED', 'RESOLVE_STACK', 'START_HORDE_TURN', 'PHASE',
   'BEGIN_COMBAT', 'ATTACK', 'BLOCK', 'END_COMBAT', 'END_SURVIVOR_TURN', 'LIFE', 'POISON', 'HORDE_LIFE', 'MILL', 'DAMAGE_HORDE',
   'TAP', 'COUNTER', 'CREATE', 'SHUFFLE', 'ANTHEM', 'NOTE',
-  'SEAT', 'SEAT_DECK', 'SEAT_DRAW', 'SEAT_SHUFFLE', 'SEAT_MULLIGAN', 'UNTAP_ALL', 'SURVIVOR_ATTACK', 'GY_TO_LIBRARY', 'SET_OPT', 'ATTACH', 'FLIP', 'CMD_DEATH', 'SEAT_KEEP']);
+  'SEAT', 'SEAT_DECK', 'SEAT_DRAW', 'SEAT_SHUFFLE', 'SEAT_MULLIGAN', 'UNTAP_ALL', 'SURVIVOR_ATTACK', 'GY_TO_LIBRARY', 'SET_OPT', 'ATTACH', 'FLIP', 'CMD_DEATH', 'SEAT_KEEP', 'LANE']);
 const int = (v, lo, hi) => Number.isInteger(v) && v >= lo && v <= hi;
 const num = (v) => typeof v === 'number' && Number.isFinite(v) && Math.abs(v) <= 1e6;
 const str = (v, max = 500) => typeof v === 'string' && v.length <= max;
@@ -126,6 +126,7 @@ function validAction(a) {
   if ('hand' in a && !int(a.hand, 0, 30)) return false;
   if ('aura' in a && typeof a.aura !== 'boolean') return false;
   if (['ATTACH', 'CMD_DEATH'].includes(a.t) && !int(a.id, 0, 1e7)) return false;
+  if ('lane' in a && a.lane !== null && !['cre', 'oth', 'land'].includes(a.lane)) return false;
   if ('freeMull' in a && typeof a.freeMull !== 'boolean') return false;
   if ('kind' in a && !['loyalty', 'generic'].includes(a.kind)) return false;
   if (a.t === 'CMD_DEATH' && !int(Math.abs(a.d), 1, 10)) return false;
@@ -135,7 +136,7 @@ function validAction(a) {
   // Seat ids are client ids (UUIDs, or 'local'): never anything like __proto__.
   for (const k of ['seat', 'owner']) if (k in a && a[k] !== undefined && !(typeof a[k] === 'string' && /^[A-Za-z0-9-]{1,64}$/.test(a[k]))) return false;
   if (['END_COMBAT', 'SURVIVOR_ATTACK'].includes(a.t) && !(num(a.damage) && a.damage >= 0)) return false;
-  if (['MOVE', 'TAP', 'COUNTER', 'BLOCK', 'ATTACK', 'BEGIN_COMBAT', 'FLIP'].includes(a.t) && !Array.isArray(a.ids)) return false;
+  if (['MOVE', 'TAP', 'COUNTER', 'BLOCK', 'ATTACK', 'BEGIN_COMBAT', 'FLIP', 'LANE'].includes(a.t) && !Array.isArray(a.ids)) return false;
   if ('entries' in a && !(Array.isArray(a.entries) && a.entries.length <= 400 && a.entries.every(entry))) return false;
   if ('counters' in a && !(Array.isArray(a.counters) && a.counters.length <= 200 && a.counters.every(x => Array.isArray(x) && int(x[0], 0, 1e7) && num(x[1])))) return false;
   return true;

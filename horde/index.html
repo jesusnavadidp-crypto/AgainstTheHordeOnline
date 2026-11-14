@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=15">
+<link rel="stylesheet" href="styles.css?v=16">
 </head>
 <body>
 
@@ -15,7 +15,7 @@
 <header class="topbar">
   <div class="brand"><span class="sigil"></span><span id="deck-title">Horde Table</span></div>
   <div class="rules-chip" id="rules-chip" title="Deck special rules"></div>
-  <button class="room-chip" id="room-chip" hidden title="Copy the invite link"><span class="dot"></span>Room <b class="code"></b><span class="players" id="room-players"></span></button>
+  <button class="room-chip" id="room-chip" hidden title="Copy the room code"><span class="dot"></span>Room <b class="code"></b><span class="players" id="room-players"></span></button>
   <div class="top-actions">
     <button class="tb" id="btn-deck">Your deck</button>
     <button class="tb accent" id="btn-tokens">✦ Tokens</button>
@@ -99,9 +99,9 @@
     <div class="dock-piles" id="dock-piles"></div>
     <div class="dock-main">
       <div class="dock-board" data-drop="s:battlefield">
-        <div class="lane lane-cre" data-lane="Creatures"><div class="row creatures" id="seat-creatures"></div></div>
-        <div class="lane lane-land" data-lane="Lands"><div class="row lands" id="seat-lands"></div></div>
-        <div class="lane lane-oth" data-lane="Other permanents"><div class="row other" id="seat-other"></div></div>
+        <div class="lane lane-cre" data-label="Creatures" data-drop="s:battlefield" data-lk="cre"><div class="row creatures" id="seat-creatures"></div></div>
+        <div class="lane lane-land" data-label="Lands" data-drop="s:battlefield" data-lk="land"><div class="row lands" id="seat-lands"></div></div>
+        <div class="lane lane-oth" data-label="Other permanents" data-drop="s:battlefield" data-lk="oth"><div class="row other" id="seat-other"></div></div>
         <div class="dock-empty" id="dock-empty"></div>
       </div>
       <div class="mull-bar" id="mull-bar" hidden></div>
@@ -254,6 +254,6 @@ Also accepts the against-the-horde.com export format."></textarea>
   </div>
 </div>
 
-<script type="module" src="js/app.js?v=15"></script>
+<script type="module" src="js/app.js?v=16"></script>
 </body>
 </html>

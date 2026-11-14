@@ -1,6 +1,6 @@
 // Board renderer. Cards are keyed DOM elements that persist between renders;
 // every move between zones is animated with FLIP (First-Last-Invert-Play).
-import { PILES, canAttack, survivorSick } from './game.js?v=15';
+import { PILES, canAttack, survivorSick } from './game.js?v=16';
 
 const els = new Map();          // entity key -> element
 let prevZone = {};              // card id -> zone at last render
@@ -20,6 +20,12 @@ export function face(db, c) {
 export function hasKw(db, c, kw) {
   return new RegExp(`^(?:[\\w' -]+, )*${kw}\\b`, 'im').test(face(db, c).text || '');
 }
+// Lane on a Survivor's board: the player's choice, else by the face that's up.
+export function autoLane(db, c) {
+  const t = face(db, c).type || '';
+  return /\bCreature\b/.test(t) || (!t && c.creature) ? 'cre' : /\bLand\b/.test(t) ? 'land' : 'oth';
+}
+const LANE_CONT = { cre: 'seat-creatures', oth: 'seat-other', land: 'seat-lands' };
 export const isWalker = (db, c) => /\bPlaneswalker\b/.test(face(db, c).type || '');
 const onBattlefield = (s, c) => (c.owner ? s.seats?.[c.owner]?.zones.battlefield : s.zones.battlefield)?.includes(c.id);
 const isLib = z => z === 'library' || /:library$/.test(z || '');
@@ -54,10 +60,11 @@ function entities(s, db) {
     for (const id of seat.zones.battlefield) {
       if (attached.has(id)) continue;
       const c = s.cards[id];
-      const land = !c.creature && /\bLand\b/.test(db[c.ref]?.type || '');
-      const cont = c.creature ? 'seat-creatures' : land ? 'seat-lands' : 'seat-other';
+      const ln = c.lane || autoLane(db, c);
+      const land = ln === 'land';
+      const cont = LANE_CONT[ln];
       if ((c.token || land) && !attachedTo.has(id)) {           // identical tokens and lands stack (Forest ×5)
-        const key = `g:${seat.id}:${c.ref}|${+c.tapped}|${c.counters}|${+c.attacking}|${c.blocking || 0}`;
+        const key = `g:${seat.id}:${c.ref}|${+c.tapped}|${c.counters}|${+c.attacking}|${c.blocking || 0}|${ln}|${+!!c.flipped}|${c.marks || 0}`;
         let g = groups.get(key);
         if (!g) { g = { key, ids: [], cont, group: true }; groups.set(key, g); out[cont].push(g); }
         g.ids.push(id);
@@ -94,7 +101,7 @@ function cardShell() {
   const el = document.createElement('div');
   el.className = 'card';
   el.innerHTML = `<div class="tilt"><div class="inner"><div class="face front"><img alt="" draggable="false"><div class="fallback"></div></div><div class="face back"></div></div></div>
-    <div class="badge count"></div><div class="badge ctr"></div><div class="badge pt"></div><div class="badge loy"></div><div class="badge mk"></div><div class="acts"></div>`;
+    <div class="badge count"></div><div class="badge ctr"></div><div class="badge pt"></div><div class="badge loy"></div><div class="badge mk"></div><button class="act flipb" data-act="flip" title="Transform (F)">⟲</button><div class="acts"></div>`;
   return el;
 }
 
@@ -121,8 +128,9 @@ function update(el, e, s, db) {
   el.classList.toggle('stacked', n > 1);
   el.classList.toggle('stacked3', n > 2);
   el.classList.toggle('attached', !!e.attached);
+  const seatBoard = ['seat-creatures', 'seat-other', 'seat-lands'].includes(e.cont);
   el.classList.toggle('sick', c.owner
-    ? e.cont === 'seat-creatures' && !e.attached && survivorSick(s, c) && !hasKw(db, c, 'haste')
+    ? seatBoard && c.creature && !e.attached && survivorSick(s, c) && !hasKw(db, c, 'haste')
     : c.creature && e.cont === 'bf-creatures' && s.phase !== 'setup' && !canAttack(s, { ...c, tapped: false }) && !c.cantAttack);
   el.classList.toggle('blocking', !!c.blocking);
   el.classList.toggle('mine', !!c.owner && c.owner === view.me);
@@ -151,11 +159,11 @@ function update(el, e, s, db) {
     acts += `<button class="act danger" data-act="kill">${n > 1 ? 'Kill 1' : 'Kill'}</button>`;
   } else if (e.cont === 'stack-lane') {
     acts = `<button class="act primary" data-act="resolve">Resolved</button><button class="act" data-act="counter">Countered</button>`;
-  } else if (e.cont === 'seat-creatures' && c.creature && c.owner === view.me && s.phase === 'survivors') {
+  } else if (seatBoard && c.creature && c.owner === view.me && s.phase === 'survivors') {
     const ready = !c.tapped && (!survivorSick(s, c) || hasKw(db, c, 'haste'));
     if (c.attacking) acts = `<button class="act danger" data-act="s-attack">Attacking ✕</button>`;
     else if (ready) acts = `<button class="act" data-act="s-attack">${n > 1 ? 'Attack 1' : 'Attack'}</button>`;
-  } else if (c.blocking && e.cont === 'seat-creatures') {
+  } else if (c.blocking && seatBoard) {
     acts = `<span class="act tag">Blocking ${esc(s.cards[c.blocking]?.name || '')}</span>`;
   }
   const box = el.querySelector('.acts');

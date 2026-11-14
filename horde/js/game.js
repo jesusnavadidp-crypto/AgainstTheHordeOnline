@@ -88,7 +88,7 @@ function names(s, ids) {
 function put(s, id, to, pos) {
   const c = s.cards[id];
   const from = detach(s, id);
-  if (from !== to) { c.loy = 0; c.marks = 0; c.flipped = false; }
+  if (from !== to) { c.loy = 0; c.marks = 0; c.flipped = false; c.lane = null; }
   if (to !== 'battlefield') {
     // Leaving the battlefield: it falls off what it was attached to, and what was attached to it
     // falls off too (Auras go to the graveyard with it, Equipment stays).
@@ -304,6 +304,11 @@ export function reduce(s0, a) {
         else if (a.kind === 'generic') c.marks = Math.max(0, (c.marks || 0) + a.d);
         else c.counters += a.d;
       }
+      break;
+    }
+    case 'LANE': {
+      // Which lane of a Survivor's board a card sits in (null: decided by its type).
+      for (const id of a.ids || []) if (s.cards[id]) s.cards[id].lane = ['cre', 'oth', 'land'].includes(a.lane) ? a.lane : null;
       break;
     }
     case 'FLIP': {

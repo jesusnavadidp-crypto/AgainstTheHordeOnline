@@ -1,10 +1,10 @@
-import { DECKS, parseDeck, buildLibrary, shuffle } from './deck.js?v=15';
-import { db, ensure, resolveNames, searchTokens, resolveDeck } from './scryfall.js?v=15';
-import { parseDecklist } from './decklist.js?v=15';
-import { initState, reduce, zoneOf, canAttack, status, PILES, survivorSick, seatOf } from './game.js?v=15';
-import { render, resetView, power, esc, hasKw, face, isWalker } from './view.js?v=15';
-import { stampLog } from './stamp.js?v=15';
-import { connectNet, clientId } from './net.js?v=15';
+import { DECKS, parseDeck, buildLibrary, shuffle } from './deck.js?v=16';
+import { db, ensure, resolveNames, searchTokens, resolveDeck } from './scryfall.js?v=16';
+import { parseDecklist } from './decklist.js?v=16';
+import { initState, reduce, zoneOf, canAttack, status, PILES, survivorSick, seatOf } from './game.js?v=16';
+import { render, resetView, power, esc, hasKw, face, isWalker, autoLane } from './view.js?v=16';
+import { stampLog } from './stamp.js?v=16';
+import { connectNet, clientId } from './net.js?v=16';
 
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
@@ -362,8 +362,9 @@ $('#btn-join').addEventListener('click', () => joinRoom($('#net-code').value));
 $('#net-code').addEventListener('keydown', e => { if (e.key === 'Enter') joinRoom($('#net-code').value); });
 $('#btn-leave').addEventListener('click', () => { if (confirm('Leave this room? The game keeps going for the others.')) leaveRoom(); });
 $('#room-chip').addEventListener('click', async () => {
-  const link = location.href;
-  try { await navigator.clipboard.writeText(link); toast('Invite link copied'); } catch { prompt('Invite link:', link); }
+  const code = online?.room || new URL(location.href).searchParams.get('room') || '';
+  if (!code) return;
+  try { await navigator.clipboard.writeText(code); toast(`Room code ${code} copied`); } catch { prompt('Room code:', code); }
 });
 try { $('#net-name').value = localStorage.getItem('horde.name') || ''; } catch {}
 {
@@ -462,7 +463,7 @@ function strikeAnimation() {
 }
 // The Survivors' attackers (on the board being shown) lunge at the Horde's library.
 function survivorStrike(ids) {
-  const lib = $('#pile-library .pile-top');
+  const lib = state?.hordeLife > 0 ? $('#hlife-box') : $('#pile-library .pile-top');
   const els = [...document.querySelectorAll('.dock-board .card.attacking')].filter(el => !ids || el._ids?.some(i => ids.includes(i)));
   if (!els.length) { const r = lib.getBoundingClientRect(); impact(r.left + r.width / 2, r.top + r.height / 2, lib); return Promise.resolve(); }
   return strikeAt(els, lib);
@@ -473,8 +474,18 @@ async function strikeAt(els, targetEl) {
   const tx = target.left + target.width / 2, ty = target.top + target.height / 2;
   if (!els.length || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   const DUR = 620, GAP = Math.min(140, 700 / els.length);
-  els.forEach((el, i) => {
-    const r = el.getBoundingClientRect();
+  els.forEach((el0, i) => {
+    let el = el0;
+    const r = el0.getBoundingClientRect();
+    // Cards inside a scrolling board would be clipped on the way: fly a copy instead.
+    if (el0.closest('.dock-board')) {
+      el = el0.cloneNode(true);
+      el.classList.add('strike-copy');
+      Object.assign(el.style, { position: 'fixed', left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', margin: 0, zIndex: 55, pointerEvents: 'none' });
+      document.body.appendChild(el);
+      el0.style.opacity = '.25';
+      setTimeout(() => { el.remove(); el0.style.opacity = ''; }, i * GAP + DUR + 120);
+    }
     const dx = tx - (r.left + r.width / 2), dy = ty - (r.top + r.height / 2);
     const lift = -Math.min(180, Math.hypot(dx, dy) * 0.45);           // arc height
     const side = dx >= 0 ? 1 : -1;
@@ -486,8 +497,8 @@ async function strikeAt(els, targetEl) {
       const y = 2 * u * t * (dy / 2 + lift) + t * t * dy;
       frames.push({ transform: `translate(${x}px, ${y}px) scale(${1.12 - 0.35 * t}) rotate(${side * 14 * t}deg)`, offset: 0.28 + 0.72 * t });
     }
-    el.style.zIndex = 50;
-    strikeAnims.push({ el, anim: el.animate(frames, { duration: DUR, delay: i * GAP, fill: 'forwards' }) });
+    if (el === el0) { el.style.zIndex = 50; strikeAnims.push({ el, anim: el.animate(frames, { duration: DUR, delay: i * GAP, fill: 'forwards' }) }); }
+    else el.animate(frames, { duration: DUR, delay: i * GAP, fill: 'forwards' });
     setTimeout(() => impact(tx, ty, targetEl), i * GAP + DUR);
   });
   await wait((els.length - 1) * GAP + DUR + 60);
@@ -545,6 +556,7 @@ function renderAll(prev) {
   if (prev && prev.poison !== s.poison) floatNum($('#poison-num'), s.poison - prev.poison, true);
 
   $('#hlife-num').textContent = s.hordeLife ?? '';
+  if (prev && prev.hordeLife != null && s.hordeLife != null && prev.hordeLife !== s.hordeLife) floatNum($('#hlife-num'), s.hordeLife - prev.hordeLife, true);
   $('#anthem-num').textContent = (s.anthem >= 0 ? '+' : '') + s.anthem;
   $('#dmg-sub').textContent = s.hordeLife ? `Hits Horde life first (${s.hordeLife})` : `Mills 1 card per damage · ${s.zones.library.length} left`;
 
@@ -730,7 +742,8 @@ $('#life-box').addEventListener('wheel', e => { e.preventDefault(); if (state) d
 
 /* =================== card actions =================== */
 function castIds(ids) {
-  const spells = ids.filter(id => state.cards[id].spell), perms = ids.filter(id => !state.cards[id].spell);
+  // The Horde's spells go on the stack; a Survivor's stay on their battlefield until they clear them.
+  const spells = ids.filter(id => state.cards[id].spell && !state.cards[id].owner), perms = ids.filter(id => !spells.includes(id));
   const done = [];
   if (spells.length) done.push(dispatch({ t: 'MOVE', ids: spells, to: 'stack' }));
   if (perms.length) done.push(dispatch({ t: 'MOVE', ids: perms, to: 'battlefield' }));
@@ -749,6 +762,7 @@ document.addEventListener('click', e => {
   const ids = card._ids;
   const c = state.cards[ids[0]];
   switch (b.dataset.act) {
+    case 'flip': dispatch({ t: 'FLIP', ids: [ids[0]] }); break;
     case 'block': chooseBlocker(ids[0], e.clientX, e.clientY); break;
     case 's-attack': {
       const id = c.attacking ? ids.find(i => state.cards[i].attacking) : ids.find(i => !state.cards[i].attacking);
@@ -769,8 +783,11 @@ function itemsFor(ids, zone) {
   const out = [];
   if (!c.token && db[c.ref]?.parts?.length) out.push(I('Create its tokens…', () => openTokens(c.owner ? 'me' : 'horde')));
   if (c.commander && zone !== 'command') out.push(I('Return to command zone', mv('command')));
-  if (db[c.ref]?.back && ['battlefield', 'hand', 'command', 'exile', 'graveyard'].includes(zone))
-    out.push(I(c.flipped ? 'Transform back' : 'Transform', k => dispatch({ t: 'FLIP', ids: ids.slice(0, k) }), { kbd: 'F' }));
+  if (zone === 'battlefield' && c.owner) {
+    const cur = c.lane || autoLane(db, c);
+    for (const [ln, label] of [['cre', 'Creatures'], ['land', 'Lands'], ['oth', 'Other permanents']])
+      if (ln !== cur) out.push(I(`Move to the ${label} lane`, k => dispatch({ t: 'LANE', ids: ids.slice(0, k), lane: ln === autoLane(db, c) ? null : ln })));
+  }
   if (zone === 'battlefield' && ids.length === 1) {
     if (c.attachedTo) out.push(I(`Unattach from ${state.cards[c.attachedTo]?.name || 'it'}`, () => dispatch({ t: 'ATTACH', id: c.id, host: null })));
     else if (!c.creature || isAttachable(c)) out.push(I('Attach to…', () => chooseHost(c.id), { hint: 'Aura, Equipment' }));
@@ -811,7 +828,7 @@ function itemsFor(ids, zone) {
     return [];
   } else {
     // hand, graveyard, exile, library
-    out.push(I(c.owner ? (c.spell ? 'Cast it (to graveyard)' : zone === 'hand' || zone === 'command' ? 'Play it' : 'Put onto the battlefield')
+    out.push(I(c.owner ? (c.spell ? 'Cast it' : zone === 'hand' || zone === 'command' ? 'Play it' : 'Put onto the battlefield')
       : c.spell ? 'Cast it now' : 'Put onto the battlefield', k => castIds(ids.slice(0, k))));
     if (zone !== 'hand') out.push(I(c.owner ? 'Put into hand' : "Put into Horde's hand", mv('hand')));
     if (zone !== 'graveyard') out.push(I(zone === 'hand' ? 'Discard' : 'Put into graveyard', mv('graveyard'), { danger: zone === 'hand' }));
@@ -1032,7 +1049,7 @@ function tokenRow(ref, from) {
   const pt = d.power != null ? `${d.power}/${d.toughness} ` : '';
   return `<div class="tok" data-ref="${ref}"><img src="${d.art || d.img || ''}" alt="">
     <div><div class="nm">${esc(d.name)}</div>${from ? `<div class="from">from ${esc(from)}</div>` : ''}<div class="ty">${esc(pt + d.type.replace(/^Token /, ''))}${onBoard ? ` · <b style="color:var(--gold2)">${onBoard} in play</b>` : ''}</div></div>
-    <div class="btns"><button data-n="-1" title="Remove one">−1</button><button data-n="1">+1</button><button data-n="5">+5</button><button data-n="10">+10</button></div></div>`;
+    <div class="add" title="Click to add one (Shift: five)">+</div></div>`;
 }
 $('#tok-persist').addEventListener('change', e => { if (state) dispatch({ t: 'SET_OPT', k: 'tokensPersist', v: e.target.checked }); });
 $('#tok-owner').addEventListener('click', e => {
@@ -1075,10 +1092,11 @@ function renderTokens() {
   $('#token-list').innerHTML = html;
 }
 $('#token-list').addEventListener('click', e => {
-  const b = e.target.closest('button[data-n]');
+  const b = e.target.closest('.tok');
   if (!b) return;
-  const ref = b.closest('.tok').dataset.ref;
-  const n = +b.dataset.n;
+  const ref = b.dataset.ref;
+  const n = e.shiftKey ? 5 : 1;
+  b.animate([{ transform: 'scale(.97)' }, { transform: 'none' }], { duration: 160 });
   const d = db[ref];
   const owner = tokOwner === 'me' ? mySeat() : undefined;
   if (n > 0) {
@@ -1225,7 +1243,7 @@ function renderDock(s) {
   const me = mySeat(), seats = s.seats || {};
   if (!viewSeat || (!seats[viewSeat] && viewSeat !== me)) viewSeat = me;
   const others = Object.values(seats).filter(st => st.id !== me);
-  const info = st => st?.deckName ? `${esc(st.deckName)} · ${st.zones.hand.length} in hand · ${st.zones.library.length} in library` : 'no deck yet';
+  const info = st => st?.deckName ? `${st.zones.hand.length} in hand · ${st.zones.library.length} in library` : 'no deck yet';
   // Alone: a plain title. With other players: tabs to switch whose board is shown.
   const tab = (id, label, st) => `<button class="seat-tab ${viewSeat === id ? 'on' : ''}" data-seat="${esc(id)}"><b>${label}</b><small>${info(st)}</small></button>`;
   const th = others.length
@@ -1648,13 +1666,16 @@ document.addEventListener('pointerup', e => {
   const to = target.dataset.drop.replace(/^s:/, '');   // dock zones are the card owner's zones
   const ids = d.shift ? d.card._ids : [d.card._ids[0]];
   const from = zoneOf(state, ids[0]);
-  if (to === from) return;
+  // Dropped on a lane of your board: it stays there (null = the lane its type would pick anyway).
+  const lk = target.dataset.lk, c0 = state.cards[ids[0]];
+  const setLane = () => lk && c0.owner && dispatch({ t: 'LANE', ids, lane: lk === autoLane(db, state.cards[ids[0]] || c0) ? null : lk });
+  if (to === from) { if (to === 'battlefield' && lk && lk !== (c0.lane || autoLane(db, c0))) setLane(); return; }
   // Start the FLIP from where the card was dropped.
   if (ids.length === d.card._ids.length) {
     const cr = d.card.getBoundingClientRect();
     d.card.style.transform = `translate(${gr.left - cr.left}px, ${gr.top - cr.top}px)`;
   }
-  (to === 'battlefield' && from !== 'battlefield' ? castIds(ids) : dispatch({ t: 'MOVE', ids, to, pos: 'top' })).then(afterResolve);
+  (to === 'battlefield' && from !== 'battlefield' ? castIds(ids).then(() => to === 'battlefield' && setLane()) : dispatch({ t: 'MOVE', ids, to, pos: 'top' })).then(afterResolve);
 });
 
 /* =================== keyboard =================== */
