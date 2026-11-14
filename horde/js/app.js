@@ -1377,6 +1377,17 @@ async function loadMyDeck(input, saveAs = '') {
     if (!cards.length) throw new Error('No cards found. Paste one card per line, like "1 Sol Ring".');
     st.textContent = `Looking up ${cards.length} cards on Scryfall…`;
     const missing = await resolveDeck(cards);
+    // Commander lists pasted without a "Commander" heading usually start with it (Moxfield, Archidekt
+    // text exports): in a ~100-card singleton list with no commander, a legendary creature (or a card
+    // that says it can be your commander) on the first line is the commander, plus a Partner on the second.
+    const canLead = c => { const d = c?.ref && db[c.ref]; return !!d && (/Legendary.*\b(Creature|Planeswalker)\b/.test(d.type) || /can be your commander/i.test(d.text || '')); };
+    const mainCards = cards.filter(c => c.section === 'main');
+    const total = mainCards.reduce((n, c) => n + (c.count || 1), 0);
+    if (!cards.some(c => c.section === 'commander') && total >= 98 && total <= 101 && canLead(mainCards[0]) && (mainCards[0].count || 1) === 1) {
+      mainCards[0].section = 'commander';
+      const d0 = db[mainCards[0].ref];
+      if (/\bPartner\b|Choose a Background/i.test(d0?.text || '') && canLead(mainCards[1]) && (mainCards[1].count || 1) === 1) mainCards[1].section = 'commander';
+    }
     const entries = [];
     for (const c of cards) {
       const d = c.ref && db[c.ref];
