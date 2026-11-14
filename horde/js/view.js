@@ -1,6 +1,6 @@
 // Board renderer. Cards are keyed DOM elements that persist between renders;
 // every move between zones is animated with FLIP (First-Last-Invert-Play).
-import { PILES, canAttack, survivorSick } from './game.js?v=13';
+import { PILES, canAttack, survivorSick } from './game.js?v=14';
 
 const els = new Map();          // entity key -> element
 let prevZone = {};              // card id -> zone at last render
@@ -31,14 +31,25 @@ function entities(s, db) {
   const out = { 'bf-creatures': [], 'bf-other': [], 'attack-lane': [], 'reveal-lane': [], 'stack-lane': [], 'hand-row': [],
     'seat-creatures': [], 'seat-lands': [], 'seat-other': [], 'seat-hand': [] };
   const groups = new Map();
+  // Attached cards (Auras, Equipment) are drawn tucked behind their host, so they and their
+  // hosts never merge into a token or land stack.
+  const bfIds = [...s.zones.battlefield];
+  for (const k in s.seats || {}) bfIds.push(...s.seats[k].zones.battlefield);
+  const onBf = new Set(bfIds), attachedTo = new Map();      // host id -> [attached ids]
+  for (const id of bfIds) {
+    const h = s.cards[id].attachedTo;
+    if (h && onBf.has(h)) { if (!attachedTo.has(h)) attachedTo.set(h, []); attachedTo.get(h).push(id); }
+  }
+  const attached = new Set([...attachedTo.values()].flat());
   // The Survivor board shown in the dock (yours, or another player's).
   const seat = s.seats?.[view.seat];
   if (seat) {
     for (const id of seat.zones.battlefield) {
+      if (attached.has(id)) continue;
       const c = s.cards[id];
       const land = !c.creature && /\bLand\b/.test(db[c.ref]?.type || '');
       const cont = c.creature ? 'seat-creatures' : land ? 'seat-lands' : 'seat-other';
-      if (c.token || land) {           // identical tokens and lands stack (Forest ×5)
+      if ((c.token || land) && !attachedTo.has(id)) {           // identical tokens and lands stack (Forest ×5)
         const key = `g:${seat.id}:${c.ref}|${+c.tapped}|${c.counters}|${+c.attacking}|${c.blocking || 0}`;
         let g = groups.get(key);
         if (!g) { g = { key, ids: [], cont, group: true }; groups.set(key, g); out[cont].push(g); }
@@ -48,9 +59,10 @@ function entities(s, db) {
     if (view.seat === view.me) for (const id of seat.zones.hand) out['seat-hand'].push({ key: 'c:' + id, ids: [id], cont: 'seat-hand' });
   }
   for (const id of s.zones.battlefield) {
+    if (attached.has(id)) continue;
     const c = s.cards[id];
     const cont = c.attacking ? 'attack-lane' : c.creature ? 'bf-creatures' : 'bf-other';
-    if (c.token) {
+    if (c.token && !attachedTo.has(id)) {
       const key = `g:${c.ref}|${+c.tapped}|${c.counters}|${+c.attacking}|${+c.blocked}`;
       let g = groups.get(key);
       if (!g) { g = { key, ids: [], cont, group: true }; groups.set(key, g); out[cont].push(g); }
@@ -59,6 +71,15 @@ function entities(s, db) {
   }
   for (const [zn, cont] of [['reveal', 'reveal-lane'], ['stack', 'stack-lane'], ['hand', 'hand-row']])
     for (const id of s.zones[zn]) out[cont].push({ key: 'c:' + id, ids: [id], cont });
+  // Put each host's attached cards just before it, in the host's lane.
+  if (attachedTo.size) for (const cont in out) {
+    const list = [];
+    for (const e of out[cont]) {
+      for (const aid of attachedTo.get(e.ids[0]) || []) list.push({ key: 'c:' + aid, ids: [aid], cont, attached: true });
+      list.push(e);
+    }
+    out[cont] = list;
+  }
   return out;
 }
 
@@ -91,8 +112,9 @@ function update(el, e, s, db) {
   el.classList.toggle('token', c.token);
   el.classList.toggle('stacked', n > 1);
   el.classList.toggle('stacked3', n > 2);
+  el.classList.toggle('attached', !!e.attached);
   el.classList.toggle('sick', c.owner
-    ? e.cont === 'seat-creatures' && survivorSick(s, c) && !hasKw(db, c, 'haste')
+    ? e.cont === 'seat-creatures' && !e.attached && survivorSick(s, c) && !hasKw(db, c, 'haste')
     : c.creature && e.cont === 'bf-creatures' && s.phase !== 'setup' && !canAttack(s, { ...c, tapped: false }) && !c.cantAttack);
   el.classList.toggle('blocking', !!c.blocking);
   el.classList.toggle('mine', !!c.owner && c.owner === view.me);
@@ -108,14 +130,15 @@ function update(el, e, s, db) {
 
   // contextual action buttons on the card
   let acts = '';
-  if (e.cont === 'attack-lane') {
+  if (e.attached) acts = '';
+  else if (e.cont === 'attack-lane') {
     acts = c.blocked
       ? `<button class="act" data-act="unblock">Unblock</button>`
       : `<button class="act" data-act="block">${n > 1 ? 'Block 1' : 'Block'}</button>`;
     acts += `<button class="act danger" data-act="kill">${n > 1 ? 'Kill 1' : 'Kill'}</button>`;
   } else if (e.cont === 'stack-lane') {
     acts = `<button class="act primary" data-act="resolve">Resolved</button><button class="act" data-act="counter">Countered</button>`;
-  } else if (e.cont === 'seat-creatures' && c.owner === view.me && s.phase === 'survivors') {
+  } else if (e.cont === 'seat-creatures' && c.creature && c.owner === view.me && s.phase === 'survivors') {
     const ready = !c.tapped && (!survivorSick(s, c) || hasKw(db, c, 'haste'));
     if (c.attacking) acts = `<button class="act danger" data-act="s-attack">Attacking ✕</button>`;
     else if (ready) acts = `<button class="act" data-act="s-attack">${n > 1 ? 'Attack 1' : 'Attack'}</button>`;

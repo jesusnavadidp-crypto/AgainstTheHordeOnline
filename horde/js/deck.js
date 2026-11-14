@@ -1,4 +1,4 @@
-import { COMMUNITY } from './community.js?v=13';
+import { COMMUNITY } from './community.js?v=14';
 // Deck definitions + parsing + library building.
 // Deck .txt files use the against-the-horde.com format:
 //   <count> <set> <type> <flag> <name...> <oracle_id> <scryfall_id>

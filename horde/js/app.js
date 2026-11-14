@@ -1,10 +1,10 @@
-import { DECKS, parseDeck, buildLibrary, shuffle } from './deck.js?v=13';
-import { db, ensure, resolveNames, searchTokens, resolveDeck } from './scryfall.js?v=13';
-import { parseDecklist } from './decklist.js?v=13';
-import { initState, reduce, zoneOf, canAttack, status, PILES, survivorSick } from './game.js?v=13';
-import { render, resetView, power, esc, hasKw } from './view.js?v=13';
-import { stampLog } from './stamp.js?v=13';
-import { connectNet, clientId } from './net.js?v=13';
+import { DECKS, parseDeck, buildLibrary, shuffle } from './deck.js?v=14';
+import { db, ensure, resolveNames, searchTokens, resolveDeck } from './scryfall.js?v=14';
+import { parseDecklist } from './decklist.js?v=14';
+import { initState, reduce, zoneOf, canAttack, status, PILES, survivorSick, seatOf } from './game.js?v=14';
+import { render, resetView, power, esc, hasKw } from './view.js?v=14';
+import { stampLog } from './stamp.js?v=14';
+import { connectNet, clientId } from './net.js?v=14';
 
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
@@ -457,7 +457,7 @@ function hordeStalled() { return state?.phase === 'horde' && !busy && Date.now()
 let strikeAnims = [];
 function strikeAnimation() {
   const els = [...document.querySelectorAll('#attack-lane .card')]
-    .filter(el => el._ids?.some(id => state.cards[id] && !state.cards[id].blocked));
+    .filter(el => el._ids?.some(id => state.cards[id]?.attacking && !state.cards[id].blocked));
   return strikeAt(els, $('#life-box'));
 }
 // The Survivors' attackers (on the board being shown) lunge at the Horde's library.
@@ -513,6 +513,7 @@ async function resolveCombat() {
   try { await dispatch({ t: 'END_COMBAT', damage: hits.damage, poison: hits.poison, kill: hits.kill, counters: hits.counters }); } finally { busy = false; renderAll(state); }
 }
 
+let refitRaf = 0;
 function renderAll(prev) {
   const s = state;
   // Classes and boxes that change the layout come first, so card sizes are fitted to the final space.
@@ -524,6 +525,9 @@ function renderAll(prev) {
   renderDock(s);
   layoutTable();
   render(s, db, { me: mySeat(), seat: viewSeat || mySeat(), beforeMeasure: fitBoards });
+  // Some sizes (the hand row, fonts) settle only after the first paint: fit once more then.
+  clearTimeout(refitRaf);
+  refitRaf = setTimeout(fitBoards, 80);
   strikeAnims = strikeAnims.filter(({ el, anim }) => {
     if (anim.playState !== 'finished') return true;   // still flying: leave it
     anim.cancel(); el.style.zIndex = ''; return false;
@@ -719,6 +723,7 @@ function hudClick(e) {
 }
 document.querySelector('.hud').addEventListener('click', hudClick);
 $('#survivor-life').addEventListener('click', hudClick);
+$('#top-dmg').addEventListener('click', hudClick);
 $('#life-box').addEventListener('wheel', e => { e.preventDefault(); if (state) dispatch({ t: 'LIFE', d: e.deltaY < 0 ? 1 : -1 }); }, { passive: false });
 
 /* =================== card actions =================== */
@@ -762,6 +767,12 @@ function itemsFor(ids, zone) {
   const out = [];
   if (!c.token && db[c.ref]?.parts?.length) out.push(I('Create its tokens…', () => openTokens(c.owner ? 'me' : 'horde')));
   if (c.commander && zone !== 'command') out.push(I('Return to command zone', mv('command')));
+  if (c.owner && c.owner === mySeat() && !c.commander && !c.token && ['hand', 'library', 'graveyard', 'exile', 'battlefield'].includes(zone))
+    out.push(I('Make it your commander', () => dispatch({ t: 'COMMANDER', seat: mySeat(), id: c.id }), { hint: 'to command zone' }));
+  if (zone === 'battlefield' && ids.length === 1) {
+    if (c.attachedTo) out.push(I(`Unattach from ${state.cards[c.attachedTo]?.name || 'it'}`, () => dispatch({ t: 'ATTACH', id: c.id, host: null })));
+    else if (!c.creature || isAttachable(c)) out.push(I('Attach to…', () => chooseHost(c.id), { hint: 'Aura, Equipment' }));
+  }
   if (zone === 'battlefield') {
     out.push(I(c.tapped ? 'Untap' : 'Tap', k => dispatch({ t: 'TAP', ids: ids.slice(0, k), v: !c.tapped }), { kbd: 'T' }));
     if (c.creature) {
@@ -803,10 +814,35 @@ function itemsFor(ids, zone) {
   return out;
 }
 
+// Auras and Equipment can be attached to a permanent: from the card menu, or by dropping them on it.
+function isAttachable(c) { return /\b(Aura|Equipment|Fortification)\b/.test(db[c.ref]?.type || ''); }
+function attachTo(id, host) {
+  return dispatch({ t: 'ATTACH', id, host, aura: /\bAura\b/.test(db[state.cards[id].ref]?.type || '') });
+}
+let lastMenuAt = [200, 200];
+function chooseHost(id) {
+  const c = state.cards[id];
+  const bf = [...(state.seats?.[mySeat()]?.zones.battlefield || []), ...state.zones.battlefield,
+    ...Object.values(state.seats || {}).filter(st => st.id !== mySeat()).flatMap(st => st.zones.battlefield)];
+  const hosts = bf.map(i => state.cards[i]).filter(h => h.id !== id && !h.attachedTo && (h.creature || !isAttachable(h)));
+  hosts.sort((a, b) => b.creature - a.creature);
+  const whose = h => h.owner ? (h.owner === mySeat() ? 'yours' : seatOf(state, h.owner)?.name || '') : 'Horde';
+  const seen = new Set(), items = [];
+  for (const h of hosts) {                       // one line per kind of token, not one per copy
+    const k = h.token || !h.creature && /\bLand\b/.test(db[h.ref]?.type || '') ? h.ref + '|' + (h.owner || '') : h.id;
+    if (seen.has(k)) continue;
+    seen.add(k);
+    items.push({ label: h.name, hint: whose(h), fn: () => attachTo(id, h.id) });
+  }
+  if (!items.length) { toast('Nothing on the battlefield to attach it to.'); return; }
+  openMenu(lastMenuAt[0], lastMenuAt[1], { title: `Attach ${c.name} to…`, items: items.slice(0, 30) });
+}
+
 /* =================== menus =================== */
 let menuState = null;
 function openMenu(x, y, { title, max = 1, items }) {
   if (!items.length) return;
+  lastMenuAt = [x, y];
   const m = $('#menu');
   menuState = { amt: 1, max, items };
   const draw = () => {
@@ -967,6 +1003,16 @@ function madeTokenRefs() {
   return [...out].map(([ref, from]) => ({ ref, from: [...from].join(', ') }));
 }
 
+// Tokens these cards can make (from Scryfall's related parts), with the cards that make them.
+function tokensMadeBy(ids) {
+  const out = new Map();
+  for (const id of ids) {
+    const c = state.cards[id];
+    if (!c || c.token) continue;
+    for (const r of db[c.ref]?.parts || []) { if (!out.has(r)) out.set(r, new Set()); out.get(r).add(c.name); }
+  }
+  return [...out].map(([ref, from]) => ({ ref, from: [...from].slice(0, 3).join(', ') + (from.size > 3 ? '…' : '') }));
+}
 function tokenRow(ref, from) {
   const d = db[ref];
   if (!d) return from ? `<p class="drawer-sub">Loading a token made by ${esc(from)}…</p>` : '';
@@ -984,16 +1030,35 @@ $('#tok-owner').addEventListener('click', e => {
 function renderTokens() {
   $('#tok-persist').checked = !!state.opts.tokensPersist;
   for (const b of $$('#tok-owner [data-owner]')) b.classList.toggle('on', b.dataset.owner === tokOwner);
-  const deckRefs = state.deck.tokenRefs || [];
-  const boardRefs = [...new Set(state.zones.battlefield.map(id => state.cards[id]).filter(c => c.token).map(c => c.ref))].filter(r => !deckRefs.includes(r));
-  const made = madeTokenRefs();
-  const missing = made.map(m => m.ref).filter(r => !db[r]);
-  if (missing.length) ensure(missing).then(() => $('#drawer-tokens').classList.contains('on') && renderTokens()).catch(() => {});
+  $('#tok-help').textContent = tokOwner === 'me'
+    ? 'Tokens for you: the ones your deck makes are listed first. They land on your board.'
+    : 'Tokens for the Horde. Click a token stack on the board to destroy, tap or move several at once.';
   let html = '';
-  if (made.length) html += `<div class="tok-section hot">Made by cards in play or just cast</div>` +
-    made.map(m => tokenRow(m.ref, m.from)).join('');
-  if (deckRefs.length) html += `<div class="tok-section">This Horde's tokens</div>` + deckRefs.map(r => tokenRow(r)).join('');
-  if (boardRefs.length) html += `<div class="tok-section">Other tokens in play</div>` + boardRefs.map(r => tokenRow(r)).join('');
+  if (tokOwner === 'me') {
+    const seat = state.seats?.[mySeat()];
+    const mine = id => state.cards[id];
+    const inPlay = tokensMadeBy(seat?.zones.battlefield || []);
+    const rest = tokensMadeBy(Object.values(state.cards).filter(c => c.owner === mySeat()).map(c => c.id))
+      .filter(m => !inPlay.some(x => x.ref === m.ref));
+    const shown = new Set([...inPlay, ...rest].map(m => m.ref));
+    const board = [...new Set((seat?.zones.battlefield || []).map(mine).filter(c => c.token).map(c => c.ref))].filter(r => !shown.has(r));
+    const missing = [...inPlay, ...rest].map(m => m.ref).filter(r => !db[r]);
+    if (missing.length) ensure(missing).then(() => $('#drawer-tokens').classList.contains('on') && renderTokens()).catch(() => {});
+    if (inPlay.length) html += `<div class="tok-section hot">Made by your cards in play</div>` + inPlay.map(m => tokenRow(m.ref, m.from)).join('');
+    if (rest.length) html += `<div class="tok-section">Your deck's tokens</div>` + rest.map(m => tokenRow(m.ref, m.from)).join('');
+    if (board.length) html += `<div class="tok-section">Your other tokens in play</div>` + board.map(r => tokenRow(r)).join('');
+    if (!seat?.deckName && !html) html += `<p class="drawer-sub">Load your deck (Your deck, at the top) to see the tokens it makes, or search for any token below.</p>`;
+  } else {
+    const deckRefs = state.deck.tokenRefs || [];
+    const boardRefs = [...new Set(state.zones.battlefield.map(id => state.cards[id]).filter(c => c.token).map(c => c.ref))].filter(r => !deckRefs.includes(r));
+    const made = madeTokenRefs();
+    const missing = made.map(m => m.ref).filter(r => !db[r]);
+    if (missing.length) ensure(missing).then(() => $('#drawer-tokens').classList.contains('on') && renderTokens()).catch(() => {});
+    if (made.length) html += `<div class="tok-section hot">Made by cards in play or just cast</div>` +
+      made.map(m => tokenRow(m.ref, m.from)).join('');
+    if (deckRefs.length) html += `<div class="tok-section">This Horde's tokens</div>` + deckRefs.map(r => tokenRow(r)).join('');
+    if (boardRefs.length) html += `<div class="tok-section">Other tokens in play</div>` + boardRefs.map(r => tokenRow(r)).join('');
+  }
   if (tokenSearch.length) html += `<div class="tok-section">Search results</div>` + tokenSearch.map(c => tokenRow(c.id)).join('');
   $('#token-list').innerHTML = html;
 }
@@ -1091,7 +1156,49 @@ function fitBoards() {
   const sz = CARD_SIZES[viewPref.card] || CARD_SIZES.m;
   fitFlow(board, [$('#bf-creatures'), $('#bf-other')],
     24 + vis($('.hand-wrap')) + vis($('.attack-zone')) + (phone ? 0 : split ? 34 : 84), sz.horde[0], split ? sz.horde[1] * 0.75 : sz.horde[1]);
-  if (split) fitFlow($('.dock-board'), [$('#seat-creatures'), $('#seat-other'), $('#seat-lands')], 30, sz.seat[0], sz.seat[1]);
+  if (split) {
+    fitLanes($('.dock-board'), 18, sz.seat[0], sz.seat[1]);
+    // Your piles stand in a column beside the board, as big as its height allows.
+    const piles = $('#dock-piles'), n = piles.children.length;
+    if (phone) piles.style.removeProperty('--cw');
+    else if (n) piles.style.setProperty('--cw', Math.max(34, Math.min(96, Math.floor(($('.dock-body').clientHeight - (n - 1) * 8 - 4) / n / 1.4))) + 'px');
+  }
+  fitHand();
+}
+// Your hand sits centred; cards overlap only as much as needed to fit, and grow on hover to be read.
+const HAND_ZOOM = { s: 210, m: 260, l: 320 };
+function fitHand() {
+  const row = $('#seat-hand'), n = row.children.length;
+  if (!n) return;
+  const cw = row.children[0].offsetWidth || 80, W = row.clientWidth - 16;
+  const ov = n > 1 ? Math.min(8, Math.max(-cw * 0.72, (W - n * cw) / (n - 1))) : 0;
+  row.style.setProperty('--ov', ov + 'px');
+  row.style.setProperty('--hz', (Math.max(1.3, (HAND_ZOOM[viewPref.zoom] || 260) / cw)).toFixed(2));
+}
+// Two lanes: creatures on top; lands and other permanents side by side below. Each lane wraps.
+function fitLanes(box, reserve, min, max) {
+  const groups = [[$('#seat-creatures')], [$('#seat-lands'), $('#seat-other')]];
+  const W0 = box.clientWidth - 40, H = (box.clientHeight - reserve) * 0.97;
+  const all = groups.flat();
+  const stat = r => ({ n: r.children.length, tapped: r.querySelectorAll('.card.tapped').length, att: r.querySelectorAll('.card.attached').length });
+  const live = groups.map(g => g.filter(r => r.children.length).map(stat)).filter(g => g.length);
+  if (!live.length || W0 <= 0 || H <= 0) { for (const r of all) r.style.removeProperty('--cw'); return; }
+  let cw = max;
+  for (; cw > min; cw -= 2) {
+    let need = 0;
+    for (const g of live) {
+      const W = g.length > 1 ? (W0 - 30) / 2 : W0;
+      let h = 0;
+      for (const L of g) {
+        const w = cw * (1 + .42 * L.tapped / L.n) + 12;                    // tapped cards are rotated, so wider
+        const lines = Math.ceil((L.n - L.att) / Math.max(1, Math.floor((W + 12) / w)));   // attached cards tuck behind
+        h = Math.max(h, lines * (cw * 88 / 63) + (lines - 1) * 14 + (L.att ? cw * 0.42 : 0));
+      }
+      need += h + 8 + 6;                                                       // lane padding, gap between lanes
+    }
+    if (need <= H) break;
+  }
+  for (const r of all) r.style.setProperty('--cw', cw + 'px');
 }
 let resizeT = 0;
 addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(() => state && $('#setup').classList.contains('off') && renderAll(state), 150); });
@@ -1102,18 +1209,20 @@ const SEAT_LABEL = { library: 'Library', graveyard: 'Graveyard', exile: 'Exile',
 function renderDock(s) {
   const me = mySeat(), seats = s.seats || {};
   if (!viewSeat || (!seats[viewSeat] && viewSeat !== me)) viewSeat = me;
-  const list = Object.values(seats);
-  const tab = (id, name, sub) => `<button class="seat-tab ${viewSeat === id ? 'on' : ''}" data-seat="${esc(id)}">${esc(name)}${id === me ? ' <em>you</em>' : ''}<small>${sub}</small></button>`;
-  let tabs = list.map(st => tab(st.id, st.name, st.deckName
-    ? `${esc(st.deckName)} · ${st.zones.hand.length} in hand · ${st.zones.library.length} left` : 'no deck yet'));
-  if (!seats[me]) tabs.unshift(tab(me, 'You', 'no deck yet'));
-  const th = tabs.join('');
+  const others = Object.values(seats).filter(st => st.id !== me);
+  const info = st => st?.deckName ? `${esc(st.deckName)} · ${st.zones.hand.length} in hand · ${st.zones.library.length} in library` : 'no deck yet';
+  // Alone: a plain title. With other players: tabs to switch whose board is shown.
+  const tab = (id, label, st) => `<button class="seat-tab ${viewSeat === id ? 'on' : ''}" data-seat="${esc(id)}"><b>${label}</b><small>${info(st)}</small></button>`;
+  const th = others.length
+    ? [tab(me, 'Your board', seats[me]), ...others.map(st => tab(st.id, `${esc(st.name)}'s board`, st))].join('')
+    : `<div class="seat-title"><b>Your board</b><small>${info(seats[me])}</small></div>`;
   if ($('#seat-tabs').innerHTML !== th) $('#seat-tabs').innerHTML = th;
 
   const seat = seats[viewSeat], mine = viewSeat === me;
   $('#dock').classList.toggle('mine', mine);
   $('#dock-tools').hidden = !mine;
-  const zones = ['library', 'graveyard', 'exile', ...(seat?.zones.command.length ? ['command'] : []), ...(!mine && seat ? ['hand'] : [])];
+  const hasCmd = seat && (seat.zones.command.length || Object.values(s.cards).some(c => c.commander && c.owner === seat.id));
+  const zones = [...(hasCmd ? ['command'] : []), 'library', 'graveyard', 'exile', ...(!mine && seat ? ['hand'] : [])];
   const piles = $('#dock-piles');
   const key = viewSeat + '|' + zones.join();
   if (piles.dataset.key !== key) {
@@ -1155,6 +1264,11 @@ $('#dock-piles').addEventListener('click', e => {
   const seat = state.seats?.[seatId];
   if (!seat || zone === 'hand') return;
   if (zone === 'graveyard' && seatId === mySeat()) { graveyardMenu(e, seatId); return; }
+  if (zone === 'command' && seat.zones.command.length === 1 && seatId === mySeat()) {
+    const id = seat.zones.command[0];
+    openMenu(e.clientX, e.clientY, { title: state.cards[id].name, items: itemsFor([id], 'command') });
+    return;
+  }
   if (zone !== 'library') { openViewer({ seat: seatId, zone }); return; }
   if (seatId !== mySeat()) return;                     // someone else's library stays private
   const n = seat.zones.library.length;
@@ -1337,6 +1451,7 @@ document.addEventListener('pointerover', e => {
   if (e.pointerType === 'touch') return;
   const t = e.target.closest(ZOOMABLE);
   if (!t || t === zoomFor || drag?.started || $('#menu').classList.contains('on')) return;
+  if (t.parentElement?.id === 'seat-hand') { hideZoom(); return; }
   zoomFor = t;
   clearTimeout(zoomTimer);
   zoomTimer = setTimeout(() => zoomFor === t && showZoom(t), 140);
@@ -1403,6 +1518,16 @@ document.addEventListener('pointerup', e => {
   const gr = d.ghost.getBoundingClientRect();
   d.ghost.remove();
   d.card.style.opacity = '';
+  const onCard = document.elementFromPoint(e.clientX, e.clientY)?.closest('.card:not(.ghost)');
+  const moving = state.cards[d.card._ids[0]];
+  if (onCard && onCard !== d.card && onCard._ids && isAttachable(moving)) {
+    const host = state.cards[onCard._ids[0]];
+    const fromZ = zoneOf(state, moving.id);
+    if (host && zoneOf(state, host.id) === 'battlefield' && ['battlefield', 'hand', 'command'].includes(fromZ)) {
+      (fromZ === 'battlefield' ? Promise.resolve() : castIds([moving.id])).then(() => attachTo(moving.id, host.id));
+      return;
+    }
+  }
   const target = dropTarget(e.clientX, e.clientY);
   if (!target) return;
   const to = target.dataset.drop.replace(/^s:/, '');   // dock zones are the card owner's zones

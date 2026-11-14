@@ -57,6 +57,19 @@ export function parseDecklist(text) {
     entries.push({ count, name: rest, set, collector, section: sec, block, explicit: sec !== 'main' });
   });
 
+  // Commander lists without headers: a first or last block (after/before a blank line) of one or two
+  // single cards, with about 100 cards in all, is the commander (Moxfield and MTGO put it there).
+  if (!explicit && block >= 1) {
+    const total = entries.reduce((a, e) => a + e.count, 0);
+    for (const b of [0, block]) {
+      const blk = entries.filter(e => e.block === b);
+      if (blk.length && blk.length <= 2 && blk.every(e => e.count === 1) && total >= 98 && total <= 101) {
+        for (const e of blk) { e.section = 'commander'; e.explicit = true; }
+        explicit = true;
+        break;
+      }
+    }
+  }
   // MTGO style: with no explicit headers, a trailing block (after a blank line) of <= 15 cards is the sideboard.
   if (!explicit && block >= 1) {
     const last = entries.filter(e => e.block === block);

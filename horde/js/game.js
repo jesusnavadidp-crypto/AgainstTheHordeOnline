@@ -89,6 +89,17 @@ function put(s, id, to, pos) {
   const c = s.cards[id];
   const from = detach(s, id);
   if (to !== 'battlefield') {
+    // Leaving the battlefield: it falls off what it was attached to, and what was attached to it
+    // falls off too (Auras go to the graveyard with it, Equipment stays).
+    if (from === 'battlefield' || c.attachedTo) {
+      c.attachedTo = null;
+      for (const k in s.cards) {
+        const o = s.cards[k];
+        if (o.attachedTo !== id) continue;
+        o.attachedTo = null;
+        if (o.aura) put(s, o.id, 'graveyard');
+      }
+    }
     if (c.blocking && s.cards[c.blocking]) s.cards[c.blocking].blockedBy = null;     // attacker stays blocked
     if (c.blockedBy && s.cards[c.blockedBy]) s.cards[c.blockedBy].blocking = null;
     c.tapped = false; c.counters = 0; c.attacking = false; c.blocked = false; c.blockedBy = null; c.blocking = null;
@@ -377,6 +388,32 @@ export function reduce(s0, a) {
       for (const id of ids) put(s, id, 'library', 'bottom');
       if (samePerm(a.order, zs.library)) zs.library = a.order;
       log(s, `${label} shuffled from ${owner ? seatName(s, owner) + "'s" : 'the Horde\'s'} graveyard into the library.`);
+      break;
+    }
+    case 'ATTACH': {
+      // An Aura or Equipment (`id`) attached to a permanent (`host`), or unattached (host: null).
+      const c = s.cards[a.id];
+      if (!c) break;
+      if (a.host == null) {
+        if (c.attachedTo) { c.attachedTo = null; log(s, `${c.name} is no longer attached.`); }
+        break;
+      }
+      const h = s.cards[a.host];
+      if (!h || h.id === c.id || zoneOf(s, c.id) !== 'battlefield' || zoneOf(s, h.id) !== 'battlefield') break;
+      if (h.attachedTo) break;                                                                       // no chains
+      for (const k in s.cards) if (s.cards[k].attachedTo === c.id) s.cards[k].attachedTo = null;
+      c.attachedTo = h.id;
+      c.aura = !!a.aura;
+      log(s, `${c.name} attached to ${h.name}.`);
+      break;
+    }
+    case 'COMMANDER': {
+      // A Survivor marks one of their own cards as their commander: it goes to the command zone.
+      const c = s.cards[a.id];
+      if (!c || c.owner !== a.seat || !seatOf(s, a.seat)) break;
+      c.commander = true;
+      put(s, c.id, 'command');
+      log(s, `${c.name} is ${seatName(s, a.seat)}'s commander.`);
       break;
     }
     case 'SET_OPT': {

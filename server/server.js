@@ -108,7 +108,7 @@ const isState = (s) => s && typeof s === 'object' && !Array.isArray(s) && s.zone
 const ACTIONS = new Set(['MOVE', 'REVEAL', 'DRAW', 'GATHER_CASTS', 'CAST_REVEALED', 'RESOLVE_STACK', 'START_HORDE_TURN', 'PHASE',
   'BEGIN_COMBAT', 'ATTACK', 'BLOCK', 'END_COMBAT', 'END_SURVIVOR_TURN', 'LIFE', 'POISON', 'HORDE_LIFE', 'MILL', 'DAMAGE_HORDE',
   'TAP', 'COUNTER', 'CREATE', 'SHUFFLE', 'ANTHEM', 'NOTE',
-  'SEAT', 'SEAT_DECK', 'SEAT_DRAW', 'SEAT_SHUFFLE', 'SEAT_MULLIGAN', 'UNTAP_ALL', 'SURVIVOR_ATTACK', 'GY_TO_LIBRARY', 'SET_OPT']);
+  'SEAT', 'SEAT_DECK', 'SEAT_DRAW', 'SEAT_SHUFFLE', 'SEAT_MULLIGAN', 'UNTAP_ALL', 'SURVIVOR_ATTACK', 'GY_TO_LIBRARY', 'SET_OPT', 'ATTACH', 'COMMANDER']);
 const int = (v, lo, hi) => Number.isInteger(v) && v >= lo && v <= hi;
 const num = (v) => typeof v === 'number' && Number.isFinite(v) && Math.abs(v) <= 1e6;
 const str = (v, max = 500) => typeof v === 'string' && v.length <= max;
@@ -122,8 +122,10 @@ function validAction(a) {
   if ('v' in a && !num(a.v) && typeof a.v !== 'boolean') return false;          // TAP/BLOCK/ATTACK use booleans
   for (const k of ['ids', 'order', 'kill', 'tap']) if (k in a && !idList(a[k])) return false;
   if ('n' in a && !int(a.n, 0, 500)) return false;
-  for (const k of ['id', 'by']) if (k in a && a[k] !== null && !int(a[k], 0, 1e7)) return false;
+  for (const k of ['id', 'by', 'host']) if (k in a && a[k] !== null && !int(a[k], 0, 1e7)) return false;
   if ('hand' in a && !int(a.hand, 0, 30)) return false;
+  if ('aura' in a && typeof a.aura !== 'boolean') return false;
+  if (['ATTACH', 'COMMANDER'].includes(a.t) && !int(a.id, 0, 1e7)) return false;
   if (a.t === 'SET_OPT' && !(a.k === 'tokensPersist' && typeof a.v === 'boolean')) return false;
   if ('setupLeft' in a && !int(a.setupLeft, 0, 3)) return false;
   for (const k of ['to', 'pos', 'phase', 'from', 'ref', 'name', 'msg', 'deckName']) if (k in a && !str(a[k])) return false;
@@ -186,7 +188,7 @@ function handle(ws, m) {
         const bad = (msg) => send(ws, { t: 'error', code: 'bad-action', msg, nonce: m.nonce });
         if (!validAction(m.a)) return bad('Invalid action');
         // Players may only change their own seat (their deck, draws, name).
-        if (['SEAT', 'SEAT_DECK', 'SEAT_DRAW', 'SEAT_SHUFFLE', 'SEAT_MULLIGAN', 'UNTAP_ALL'].includes(m.a.t) && m.a.seat !== c.id) return bad('That is another player\'s seat');
+        if (['SEAT', 'SEAT_DECK', 'SEAT_DRAW', 'SEAT_SHUFFLE', 'SEAT_MULLIGAN', 'UNTAP_ALL', 'COMMANDER'].includes(m.a.t) && m.a.seat !== c.id) return bad('That is another player\'s seat');
         let next;
         try { next = stampLog(reduce(room.state, m.a), c.name); } catch (e) { return bad(String(e.message ?? e)); }
         // Only real changes become undo steps (a no-op, e.g. a duplicate button press, must not).

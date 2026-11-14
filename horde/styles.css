@@ -522,3 +522,84 @@ body.zoom-l .zoom-info { font-size: 14px; }
 
 .go.alt { background: rgba(255,255,255,.06); border-color: var(--line); color: var(--ink); }
 .tok-persist { font-size: 13px; color: var(--ink2); display: flex; gap: 8px; align-items: center; }
+
+/* ---------- round 3: damage on top, vertical piles, lanes, centred hand, attachments ---------- */
+/* damage controls in the top bar */
+.top-dmg { margin-left: auto; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+.top-dmg .life-label { margin-right: 2px; }
+.top-dmg input { width: 48px; text-align: center; background: rgba(255,255,255,.05); border: 1px solid var(--line); border-radius: 8px; padding: 4px; font-size: 15px; font-weight: 700; }
+.top-dmg .go { padding: 5px 12px; }
+.top-dmg .sub { margin-left: 4px; }
+.top-dmg .mini.on { display: flex; margin-right: 10px; }
+.rules-chip { flex: 0 1 auto; }
+.hud-dmg:empty, .hud-life:empty { min-height: 1px; }
+
+/* your board: piles in a column on the left, lanes and hand on the right */
+.dock-body { grid-template-columns: auto minmax(0, 1fr); overflow: visible; }
+.dock-piles { flex-direction: column; align-items: center; gap: 8px; }
+.dock-piles .pile-label { flex-direction: row; justify-content: space-between; width: var(--cw); gap: 4px; font-size: 11px; margin-top: 3px; }
+.dock-main { display: flex; flex-direction: column; gap: 6px; min-width: 0; min-height: 0; }
+.dock-board { flex: 1; flex-direction: column !important; flex-wrap: nowrap !important; align-content: stretch; gap: 6px !important; }
+.dock-board .lane { position: relative; padding: 14px 0 4px; border-top: 1px dashed rgba(255,255,255,.07); }
+.dock-board .lane:first-of-type { border-top: none; }
+.dock-board .lane::before { content: attr(data-lane); position: absolute; top: 0; left: 2px; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink3); }
+.dock-board .lane:not(:has(.card)) { display: none; }
+body.dragging .dock-board .lane { display: block; min-height: 30px; }
+.dock-board .row { max-width: none; width: 100%; justify-content: center; }
+body.dock-compact .dock-body { grid-template-columns: minmax(0, 1fr); }
+
+/* titles: one player, or tabs between players */
+.seat-title { display: flex; align-items: baseline; gap: 10px; font-size: 13px; }
+.seat-title small, .seat-tab small { color: var(--ink2); font-size: 11px; font-weight: 400; }
+.seat-tab b { font-weight: 600; }
+
+/* your hand: centred, overlapping only when needed, cards grow on hover */
+.seat-hand-wrap { position: relative; z-index: 8; }
+#seat-hand { justify-content: center; overflow: visible; flex-wrap: nowrap; padding: 6px 8px 2px; }
+#seat-hand .card + .card { margin-left: var(--ov, 6px); }
+#seat-hand .card .tilt { transform-origin: 50% 100%; }
+#seat-hand .card:hover { z-index: 20; }
+#seat-hand .card:hover .tilt { transform: translateY(-8px) scale(var(--hz, 2.6)); }
+#seat-hand .card:hover .face.front { box-shadow: 0 0 0 1px var(--gold), 0 18px 50px rgba(0,0,0,.85); }
+body.dragging #seat-hand .card:hover .tilt { transform: none; }
+
+/* Auras and Equipment tucked behind the card they're attached to, their name bar showing */
+.row:has(.card.attached) { padding-top: calc(var(--cw) * .34); }
+.card.attached { margin-right: calc(var(--cw) * -1 - 12px); top: calc(var(--cw) * -.3); }
+.card.attached + .card { z-index: 1; }
+.card.attached:hover { z-index: 2; }
+#seat-hand .card.attached { margin-right: 0; top: 0; }
+
+/* pile viewer: bigger cards, zoom shown above the dimmed backdrop */
+#zoom { z-index: 85; }
+.viewer-grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
+.modal-card { width: min(1200px, 100%); }
+
+@media (max-width: 760px) {
+  .topbar { overflow-x: auto; }
+  .top-dmg .life-label, .top-dmg .sub { display: none; }
+  .dock-piles { flex-direction: row; }
+  .dock-body { grid-template-columns: 1fr; }
+}
+/* your piles: label sits inside the pile, so the column fits four big piles */
+@media (min-width: 761px) {
+  .dock-piles .pile { position: relative; }
+  .dock-piles .pile-label { position: absolute; left: 0; right: 0; bottom: 0; margin: 0; width: auto; padding: 10px 5px 3px; border-radius: 0 0 var(--radius) var(--radius);
+    background: linear-gradient(transparent, rgba(0,0,0,.85) 45%); color: #e9e4d8; font-size: 10px; pointer-events: none; }
+  .dock-piles .pile.empty .pile-top { border: 1px dashed rgba(255,255,255,.14); }
+}
+/* two lanes: creatures across the top; lands | other permanents below. Lane names run down the left edge. */
+.dock-board { display: grid !important; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-auto-rows: min-content; align-content: start; gap: 6px 14px !important; padding: 6px 10px 10px; }
+.dock-board .lane { padding: 4px 0 4px 18px; border-top: none; border-radius: 10px; background: rgba(255,255,255,.018); min-height: 40px; }
+.dock-board .lane-cre { grid-column: 1 / -1; }
+.dock-board:not(:has(.lane-oth .card)) .lane-land, .dock-board:not(:has(.lane-land .card)) .lane-oth { grid-column: 1 / -1; }
+body.dragging .dock-board .lane-land, body.dragging .dock-board .lane-oth { grid-column: auto; }
+.dock-board .lane::before { top: 50%; left: 2px; transform: translateY(-50%) rotate(180deg); writing-mode: vertical-rl; font-size: 9px; letter-spacing: .14em; white-space: nowrap; }
+body.split .seat-hand-wrap { --cw: clamp(44px, 6.4vh, 84px); }
+.row:has(.card.attached) { padding-top: calc(var(--cw) * .42); }
+.card.attached { margin-right: calc(var(--cw) * -.86 - 12px); top: calc(var(--cw) * -.38); }
+.card.attached .face.front { box-shadow: 0 0 0 1px rgba(217,180,91,.55), 0 4px 10px rgba(0,0,0,.6); }
+#seat-hand { gap: 0; }
+@media (max-width: 760px) {
+  .dock-piles .pile-label { flex-direction: column; align-items: center; width: var(--cw); gap: 0; font-size: 10px; }
+}

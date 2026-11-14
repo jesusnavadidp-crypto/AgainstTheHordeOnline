@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=13">
+<link rel="stylesheet" href="styles.css?v=14">
 </head>
 <body>
 
@@ -24,6 +24,15 @@
     <button class="tb" id="btn-keys" title="Keyboard shortcuts (?)">Keys</button>
     <button class="tb" id="btn-undo" title="Undo (Ctrl+Z)">Undo</button>
     <button class="tb" id="btn-menu">New game</button>
+  </div>
+  <!-- Damaging the Horde: at the top, next to the Horde -->
+  <div class="top-dmg" id="top-dmg">
+    <div class="mini" id="hlife-box"><span>Horde life</span><button class="step sm" data-hlife="-1">−</button><b id="hlife-num">20</b><button class="step sm" data-hlife="1">+</button></div>
+    <span class="life-label">Damage the Horde</span>
+    <button class="step sm" data-dmg="-1">−</button><input id="dmg-num" type="number" min="1" value="1"><button class="step sm" data-dmg="1">+</button>
+    <button class="go" id="btn-dmg">Deal</button>
+    <button class="go alt" id="btn-mill" title="Mill this many cards (ignores Horde life)">Mill</button>
+    <span class="sub" id="dmg-sub">Each damage mills one card</span>
   </div>
 </header>
 
@@ -82,27 +91,25 @@
     <div class="dock-tools" id="dock-tools">
       <button class="chip" data-seat-act="draw">Draw</button>
       <button class="chip" data-seat-act="untap">Untap all</button>
-      <button class="chip" data-seat-act="tokens">Tokens for me</button>
       <button class="chip gold" data-seat-act="deck">Deck…</button>
     </div>
   </div>
   <div class="dock-body">
     <div class="dock-piles" id="dock-piles"></div>
-    <div class="dock-board" data-drop="s:battlefield">
-      <div class="row creatures" id="seat-creatures"></div>
-      <div class="row other" id="seat-other"></div>
-      <div class="row lands" id="seat-lands"></div>
-      <div class="dock-empty" id="dock-empty"></div>
+    <div class="dock-main">
+      <div class="dock-board" data-drop="s:battlefield">
+        <div class="lane lane-cre" data-lane="Creatures"><div class="row creatures" id="seat-creatures"></div></div>
+        <div class="lane lane-land" data-lane="Lands"><div class="row lands" id="seat-lands"></div></div>
+        <div class="lane lane-oth" data-lane="Other permanents"><div class="row other" id="seat-other"></div></div>
+        <div class="dock-empty" id="dock-empty"></div>
+      </div>
+      <div class="seat-hand-wrap" data-drop="s:hand"><div class="row" id="seat-hand"></div></div>
     </div>
   </div>
-  <div class="seat-hand-wrap" data-drop="s:hand"><div class="row" id="seat-hand"></div></div>
 </section>
 
 <footer class="hud">
-  <div class="hud-life">
-
-    <div class="mini" id="hlife-box"><span>Horde life</span><button class="step sm" data-hlife="-1">−</button><b id="hlife-num">20</b><button class="step sm" data-hlife="1">+</button></div>
-  </div>
+  <div class="hud-life"></div>
   <div class="hud-center">
     <div class="phase" id="phase"></div>
     <div class="combat-tools" id="combat-tools">
@@ -112,15 +119,7 @@
     </div>
     <button class="primary" id="btn-primary">…</button>
   </div>
-  <div class="hud-dmg">
-    <span class="life-label">Damage the Horde</span>
-    <div class="dmg-row">
-      <button class="step" data-dmg="-1">−</button><input id="dmg-num" type="number" min="1" value="1"><button class="step" data-dmg="1">+</button>
-      <button class="go" id="btn-dmg">Deal</button>
-      <button class="go alt" id="btn-mill" title="Mill this many cards (ignores Horde life)">Mill</button>
-    </div>
-    <span class="sub" id="dmg-sub">Each damage mills one card</span>
-  </div>
+  <div class="hud-dmg"></div>
 </footer>
 
 <div class="modal" id="keys-help">
@@ -167,7 +166,7 @@
   <div class="drawer-head"><h3>Tokens</h3><button class="x" data-close>✕</button></div>
   <label class="toggle tok-persist"><input type="checkbox" id="tok-persist"> Destroyed tokens go to the graveyard</label>
   <div class="seg tok-owner" id="tok-owner"><button data-owner="horde" class="on">For the Horde</button><button data-owner="me">For me</button></div>
-  <p class="drawer-sub">Create tokens for the Horde. Click a token stack on the board to destroy, tap or move several at once.</p>
+  <p class="drawer-sub" id="tok-help"></p>
   <div class="search"><input id="token-q" placeholder="Search any token (e.g. Zombie, Treasure, 3/3 Beast)…"><button class="go" id="token-go">Search</button></div>
   <div id="token-list"></div>
 </aside>
@@ -243,6 +242,6 @@ Also accepts the against-the-horde.com export format."></textarea>
   </div>
 </div>
 
-<script type="module" src="js/app.js?v=13"></script>
+<script type="module" src="js/app.js?v=14"></script>
 </body>
 </html>
