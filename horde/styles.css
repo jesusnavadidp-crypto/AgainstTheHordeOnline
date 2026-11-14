@@ -834,3 +834,15 @@ body.dragging .dock-board .lane-stolen { display: block; min-height: 46px; }
 .dock-board .lane-row:not(:has(.card)) { display: none; }
 body.dragging .dock-board .lane-row { display: flex; }
 .dock-board .lane-stolen { flex-grow: 1; }
+
+/* "Exiled by you": a small fixed box, always on your board, like a pile */
+.dock-board .lane-row { display: flex !important; }
+.dock-board .lane-row > .lane-stolen { display: block; flex: 0 0 clamp(150px, 13vw, 230px); height: 104px; align-self: flex-start; overflow: hidden; padding: 4px 8px; }
+.dock-board .lane-stolen .row { padding-top: 16px; --cw: 46px !important; flex-wrap: nowrap; justify-content: flex-start; gap: 0; }
+#seat-stolen .card + .card { margin-left: -24px; }
+#seat-stolen .card:hover { z-index: 3; }
+.dock-board .lane-stolen:not(:has(.card))::after { content: 'Cards you exile from the Horde'; position: absolute; inset: 24px 10px 8px; display: grid; place-items: center;
+  text-align: center; font-size: 11px; color: var(--ink3); border: 1px dashed rgba(255,255,255,.12); border-radius: 8px; }
+.dock-board .lane-row > .lane:not(.lane-stolen):not(:has(.card)) { display: none; }
+body.dragging .dock-board .lane-row > .lane { display: block; }
+body.dock-compact .dock-board .lane-row { display: none !important; }

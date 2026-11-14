@@ -1249,27 +1249,32 @@ function fitHand() {
   row.style.setProperty('--push', Math.round(cw * (hz - 1) / 2 - ov + 10) + 'px');
 }
 // Two lanes: creatures on top; lands and other permanents side by side below. Each lane wraps.
+// Two lanes: creatures on top; lands and other permanents side by side below, next to the small fixed
+// "Exiled by you" box. Each lane wraps.
+const STOLEN_BOX_H = 104;                                                      // that box's height (see styles)
 function fitLanes(box, reserve, min, max) {
-  const groups = [[$('#seat-creatures')], [$('#seat-lands'), $('#seat-other'), $('#seat-stolen')]];
+  const groups = [[$('#seat-creatures')], [$('#seat-lands'), $('#seat-other')]];
+  const stolenBox = $('.lane-stolen'), stolenW = stolenBox?.offsetParent ? stolenBox.offsetWidth + 14 : 0;
   const W0 = box.clientWidth - 40, H = (box.clientHeight - reserve) * 0.97;
   const all = groups.flat();
-  const stat = r => ({ n: r.children.length, tapped: r.querySelectorAll('.card.tapped').length, att: r.querySelectorAll('.card.attached').length,
-    label: r.id === 'seat-stolen' ? 18 : 0 });                              // that row has its title above the cards
-  const live = groups.map(g => g.filter(r => r.children.length).map(stat)).filter(g => g.length);
-  if (!live.length || W0 <= 0 || H <= 0) { for (const r of all) r.style.removeProperty('--cw'); return; }
+  const stat = r => ({ n: r.children.length, tapped: r.querySelectorAll('.card.tapped').length, att: r.querySelectorAll('.card.attached').length });
+  const live = groups.map(g => g.filter(r => r.children.length).map(stat));
+  if (!live.flat().length || W0 <= 0 || H <= 0) { for (const r of all) r.style.removeProperty('--cw'); return; }
   let cw = max;
   for (; cw > min; cw -= 2) {
     let need = 0;
-    for (const g of live) {
-      const W = (W0 - 30 * (g.length - 1)) / g.length;                   // lanes side by side share the width
-      let h = 0;
+    live.forEach((g, gi) => {
+      const W0g = gi === 1 ? W0 - stolenW : W0;                              // the second row shares its width with the box
+      let h = gi === 1 && stolenW ? STOLEN_BOX_H : 0;
+      if (!g.length && !h) return;
       for (const L of g) {
-        const w = cw * (1 + .42 * L.tapped / L.n) + 12;                    // tapped cards are rotated, so wider
+        const W = (W0g - 30 * (g.length - 1)) / g.length;                    // lanes side by side share the width
+        const w = cw * (1 + .42 * L.tapped / L.n) + 12;                      // tapped cards are rotated, so wider
         const lines = Math.ceil((L.n - L.att) / Math.max(1, Math.floor((W + 12) / w)));   // attached cards tuck behind
-        h = Math.max(h, lines * (cw * 88 / 63) + (lines - 1) * 14 + (L.att ? cw * 0.42 : 0) + L.label);
+        h = Math.max(h, lines * (cw * 88 / 63) + (lines - 1) * 14 + (L.att ? cw * 0.42 : 0));
       }
-      need += h + 8 + 6;                                                       // lane padding, gap between lanes
-    }
+      need += h + 8 + 6;                                                     // lane padding, gap between lanes
+    });
     if (need <= H) break;
   }
   for (const r of all) r.style.setProperty('--cw', cw + 'px');
