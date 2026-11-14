@@ -54,7 +54,7 @@ function renderOpts() {
 function renderDecks() {
   const tile = d => {
     const art = d.feature && db[d.feature]?.art;
-    return `<button class="deck ${selDeck === d.key ? 'sel' : ''}" data-deck="${d.key}" style="${art ? `background-image:url('${art}')` : ''}"><span>${esc(d.name)}</span>${d.author ? `<small class="by">by ${esc(d.author)}</small>` : ''}</button>`;
+    return `<button class="deck ${selDeck === d.key ? 'sel' : ''}" data-deck="${d.key}" title="${esc([d.intro, d.rules && 'Special rules: ' + d.rules].filter(Boolean).join('\n'))}" style="${art ? `background-image:url('${art}')` : ''}"><span>${esc(d.name)}</span>${d.author ? `<small class="by">by ${esc(d.author)}</small>` : ''}</button>`;
   };
   $('#deck-grid').innerHTML = DECKS.filter(d => !d.community).map(tile).join('')
     + `<div class="deck-group">Community Hordes <span>from against-the-horde.com</span></div>`
@@ -69,8 +69,6 @@ function renderDecks() {
   if (sv && $('#custom-box').dataset.for !== sv.key) { $('#custom-name').value = sv.name; $('#custom-text').value = sv.text; }
   if (selDeck === 'custom' && $('#custom-box').dataset.for !== 'custom') { $('#custom-name').value = ''; $('#custom-text').value = ''; }
   $('#custom-box').dataset.for = selDeck;
-  $('#setup-rules').innerHTML = d ? `<b>${esc(d.name)}.</b>${d.author ? ` By ${esc(d.author)} (<a href="${d.source}" target="_blank" rel="noopener">original deck</a>).` : ''} ${esc(d.intro)}<br><b>Special rules:</b> <span class="rules-text">${esc(d.rules)}</span>`
-    : '<b>Custom Horde.</b> All creatures controlled by the Horde have haste.';
 }
 $('#opts').addEventListener('click', e => {
   const b = e.target.closest('button[data-k]');
