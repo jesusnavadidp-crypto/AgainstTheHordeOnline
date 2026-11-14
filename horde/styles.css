@@ -732,3 +732,86 @@ body.dragging #seat-hand .card .tilt { transform: none; }
 .hero-more { align-self: flex-start; background: none; border: none; padding: 0; color: var(--gold2); font-size: 12px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 .hero-more[hidden] { display: none; }
 @media (max-width: 760px) { .hero-nav { display: none; } }
+
+/* ================= start page: the Horde fills the screen ================= */
+#setup { background: #07090d; overflow-x: hidden; }
+.s-top { position: absolute; top: 0; left: 0; right: 0; z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  padding: 16px clamp(16px, 3vw, 40px) 30px; background: linear-gradient(rgba(7,9,13,.88), transparent); }
+.s-title { font-family: Cinzel, serif; font-weight: 800; letter-spacing: .08em; font-size: clamp(20px, 2.4vw, 28px); display: flex; align-items: center; gap: 14px; text-shadow: 0 2px 20px #000; white-space: nowrap; }
+.s-title .sigil { width: 26px; height: 26px; }
+.s-online { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+.s-online input { width: 130px; background: rgba(0,0,0,.45); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; backdrop-filter: blur(8px); }
+.s-online #net-code { width: 112px; text-transform: uppercase; }
+.s-online .join { display: inline-flex; gap: 6px; }
+.s-online .join[hidden] { display: none; }
+.s-btn { border: 1px solid rgba(255,255,255,.25); background: rgba(0,0,0,.4); border-radius: 10px; padding: 8px 14px; font-weight: 600; backdrop-filter: blur(8px); transition: .15s; }
+.s-btn:hover { border-color: var(--gold); color: var(--gold2); }
+.s-btn[hidden] { display: none; }
+.s-in { color: var(--ink2); font-size: 13px; }
+.s-msg { position: absolute; right: clamp(16px, 3vw, 40px); top: 62px; margin: 0; font-size: 13px; color: var(--gold2); text-shadow: 0 1px 6px #000; }
+
+.s-stage { position: relative; height: 100vh; min-height: 640px; overflow: hidden; touch-action: pan-y; }
+.s-art { position: absolute; inset: 0; background: #0d1016 center 28% / cover no-repeat; transition: opacity .7s var(--ease), transform 1.2s var(--ease); }
+.s-art.out { opacity: 0; transform: scale(1.06); }
+.s-stage.plain .s-art { background: radial-gradient(ellipse at 50% 35%, rgba(217,180,91,.14), transparent 60%), repeating-linear-gradient(45deg, #121820 0 16px, #0f141b 16px 32px); }
+.s-stage::after { content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(180deg, rgba(7,9,13,.7) 0%, transparent 26%, transparent 46%, rgba(7,9,13,.92) 80%, #07090d 100%),
+              radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,.55)); }
+
+.s-name { position: absolute; top: clamp(96px, 14vh, 140px); left: 0; right: 0; z-index: 2; text-align: center; display: flex; flex-direction: column; align-items: center; }
+.s-name h1 { margin: 0; padding: 0 70px; font-family: Cinzel, serif; font-weight: 800; letter-spacing: .06em; font-size: clamp(44px, 8.5vw, 116px); line-height: 1;
+  text-shadow: 0 6px 40px rgba(0,0,0,.9), 0 0 2px rgba(0,0,0,.8); }
+.s-credit { margin: 10px 0 0; min-height: 1em; font-size: 13px; letter-spacing: .1em; text-transform: uppercase; color: var(--gold2); text-shadow: 0 1px 8px #000; }
+.s-credit a { color: var(--ink); }
+
+/* mini pictures of every Horde, to jump straight to one */
+.s-thumbs { margin-top: 18px; display: flex; gap: 8px; align-items: center; max-width: min(1100px, calc(100vw - 32px)); overflow-x: auto; padding: 8px 10px;
+  scrollbar-width: none; border-radius: 14px; background: rgba(7,9,13,.35); backdrop-filter: blur(6px); }
+.s-thumbs::-webkit-scrollbar { display: none; }
+.s-thumbs .deck { flex: 0 0 auto; width: 54px; height: 40px; border-radius: 9px; padding: 0; border: 1px solid rgba(255,255,255,.18); background: #151a22 center / cover;
+  opacity: .6; cursor: pointer; transition: opacity .2s, transform .2s, box-shadow .2s, width .25s var(--ease); display: grid; place-items: center; }
+.s-thumbs .deck::before, .s-thumbs .deck::after { content: none; }
+.s-thumbs .deck:hover { opacity: 1; transform: translateY(-2px); }
+.s-thumbs .deck.sel { opacity: 1; width: 72px; box-shadow: 0 0 0 2px var(--gold), 0 6px 18px rgba(217,180,91,.35); }
+.s-thumbs .deck.custom-tile { background: repeating-linear-gradient(45deg, #1a212c 0 6px, #141a23 6px 12px); }
+.s-thumbs .deck b { font-family: Cinzel, serif; font-size: 18px; color: var(--gold2); }
+.s-thumbs .thumb-sep { flex: 0 0 1px; height: 26px; background: rgba(255,255,255,.18); margin: 0 4px; }
+
+.s-nav { position: absolute; top: 50%; z-index: 3; transform: translateY(-50%); width: 56px; height: 56px; border-radius: 50%;
+  border: 1px solid rgba(255,255,255,.22); background: rgba(8,10,14,.4); backdrop-filter: blur(6px); font-size: 32px; line-height: 1; transition: .2s; }
+.s-nav:hover { background: var(--gold); color: #1b1407; border-color: var(--gold); }
+.s-nav.prev { left: clamp(12px, 3vw, 40px); } .s-nav.next { right: clamp(12px, 3vw, 40px); }
+
+/* a custom list: paste it on the picture */
+.s-custom { position: absolute; z-index: 3; left: 50%; transform: translateX(-50%); top: calc(clamp(96px, 14vh, 140px) + clamp(44px, 8.5vw, 116px) + 110px);
+  width: min(760px, calc(100% - 32px)); padding: 14px; border-radius: 16px; background: rgba(10,12,18,.72); border: 1px solid rgba(255,255,255,.1); backdrop-filter: blur(12px); }
+.s-custom textarea { height: 140px; }
+.s-custom[hidden] { display: none; }
+
+/* the settings across the bottom of the picture */
+.s-settings { position: absolute; left: 50%; bottom: clamp(16px, 4vh, 40px); transform: translateX(-50%); z-index: 3; width: min(1240px, calc(100% - 32px));
+  display: grid; grid-template-columns: 1fr auto; gap: 18px 28px; align-items: end; padding: 20px 24px;
+  background: rgba(10,12,18,.62); border: 1px solid rgba(255,255,255,.1); border-radius: 18px; backdrop-filter: blur(14px) saturate(1.2); box-shadow: 0 24px 70px rgba(0,0,0,.6); }
+.s-settings .opts { display: flex; flex-wrap: wrap; gap: 14px 30px; padding: 0; background: none; border: none; }
+.s-settings .opt label { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink3); }
+.s-settings .opt:last-child { flex-basis: 100%; flex-direction: row; gap: 22px; flex-wrap: wrap; }
+.s-settings .opt:last-child label { text-transform: none; letter-spacing: 0; font-size: 13px; color: var(--ink2); }
+.s-go { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.s-go #setup-status { font-size: 12px; max-width: 260px; text-align: right; }
+.s-create { padding: 16px 44px; font-size: 18px; white-space: nowrap; }
+.s-legal { padding: 10px clamp(16px, 3vw, 40px) 18px; }
+
+@media (max-width: 760px) {
+  .s-top { padding: 12px 14px 24px; }
+  .s-online input { width: 100px; } .s-online #net-code { width: 90px; }
+  .s-msg { top: auto; position: static; }
+  .s-nav { display: none; }
+  .s-name { top: 120px; }
+  .s-name h1 { padding: 0 16px; }
+  .s-stage { height: auto; min-height: 100vh; padding-top: 58vh; display: flex; flex-direction: column; gap: 14px; }
+  .s-custom { position: relative; top: auto; left: auto; transform: none; margin: 0 auto; }
+  .s-settings { position: relative; left: auto; bottom: auto; transform: none; margin: 0 auto 16px; grid-template-columns: 1fr; }
+  .s-create { width: 100%; }
+}
+.s-online #net-code { width: 130px; letter-spacing: .02em; }
+@media (max-width: 760px) { .s-online { justify-content: flex-start; } .s-name { top: 200px; } .s-stage { padding-top: max(64vh, 440px); } }

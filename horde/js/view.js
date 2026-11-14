@@ -1,6 +1,6 @@
 // Board renderer. Cards are keyed DOM elements that persist between renders;
 // every move between zones is animated with FLIP (First-Last-Invert-Play).
-import { PILES, canAttack, survivorSick } from './game.js?v=17';
+import { PILES, canAttack, survivorSick } from './game.js?v=18';
 
 const els = new Map();          // entity key -> element
 let prevZone = {};              // card id -> zone at last render

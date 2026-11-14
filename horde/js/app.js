@@ -1,10 +1,10 @@
-import { DECKS, parseDeck, buildLibrary, shuffle } from './deck.js?v=17';
-import { db, ensure, resolveNames, searchTokens, resolveDeck } from './scryfall.js?v=17';
-import { parseDecklist } from './decklist.js?v=17';
-import { initState, reduce, zoneOf, canAttack, status, PILES, survivorSick, seatOf } from './game.js?v=17';
-import { render, resetView, power, esc, hasKw, face, isWalker, autoLane } from './view.js?v=17';
-import { stampLog } from './stamp.js?v=17';
-import { connectNet, clientId } from './net.js?v=17';
+import { DECKS, parseDeck, buildLibrary, shuffle } from './deck.js?v=18';
+import { db, ensure, resolveNames, searchTokens, resolveDeck } from './scryfall.js?v=18';
+import { parseDecklist } from './decklist.js?v=18';
+import { initState, reduce, zoneOf, canAttack, status, PILES, survivorSick, seatOf } from './game.js?v=18';
+import { render, resetView, power, esc, hasKw, face, isWalker, autoLane } from './view.js?v=18';
+import { stampLog } from './stamp.js?v=18';
+import { connectNet, clientId } from './net.js?v=18';
 
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
@@ -56,41 +56,34 @@ function deckOrder() {
   return [...DECKS.filter(d => !d.community).map(d => d.key), ...DECKS.filter(d => d.community).map(d => d.key), ...savedDecks.map(d => d.key), 'custom'];
 }
 function renderDecks() {
-  const tile = (key, name, art, extra = '') =>
-    `<button class="deck ${selDeck === key ? 'sel' : ''} ${art ? '' : 'custom-tile'}" data-deck="${esc(key)}" style="${art ? `background-image:url('${art}')` : ''}"><span>${esc(name)}</span>${extra}</button>`;
+  // the mini pictures: every Horde, then saved lists and a new custom list
+  const tile = (key, name, art, mark = '') =>
+    `<button class="deck ${selDeck === key ? 'sel' : ''} ${art ? '' : 'custom-tile'}" data-deck="${esc(key)}" title="${esc(name)}" style="${art ? `background-image:url('${art}')` : ''}">${mark}</button>`;
   const html = DECKS.filter(d => !d.community).map(d => tile(d.key, d.name, d.feature && db[d.feature]?.art)).join('')
-    + `<span class="thumb-sep" title="Community Hordes"></span>`
-    + DECKS.filter(d => d.community).map(d => tile(d.key, d.name, d.feature && db[d.feature]?.art)).join('')
     + `<span class="thumb-sep"></span>`
-    + savedDecks.map(d => tile(d.key, d.name, null, '<small>Saved</small>')).join('')
-    + tile('custom', 'Custom list', null);
+    + DECKS.filter(d => d.community).map(d => tile(d.key, `${d.name} (by ${d.author})`, d.feature && db[d.feature]?.art)).join('')
+    + `<span class="thumb-sep"></span>`
+    + savedDecks.map(d => tile(d.key, d.name, null, `<b>${esc(d.name.slice(0, 1).toUpperCase())}</b>`)).join('')
+    + tile('custom', 'Custom list', null, '<b>+</b>');
   if ($('#deck-grid').innerHTML !== html) $('#deck-grid').innerHTML = html;
-  $('#deck-grid .sel')?.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
+  const sel = $('#deck-grid .sel');
+  if (sel) { const g = $('#deck-grid'); g.scrollTo({ left: sel.offsetLeft - g.clientWidth / 2 + sel.offsetWidth / 2, behavior: 'smooth' }); }
 
-  // the big picture
+  // the big picture, cross-faded
   const d = DECKS.find(x => x.key === selDeck), sv = savedOf(selDeck);
-  const art = d?.feature ? db[d.feature]?.art : null;
+  const art = d?.feature ? db[d.feature]?.art || '' : '';
   const hero = $('#hero');
   hero.classList.toggle('plain', !art);
-  if (hero.dataset.key !== selDeck || hero.dataset.art !== (art || '')) {
-    const changed = hero.dataset.key && hero.dataset.key !== selDeck;
-    hero.dataset.key = selDeck; hero.dataset.art = art || '';
-    $('#hero-art').style.backgroundImage = art ? `url('${art}')` : '';
-    if (changed && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      $('#hero-art').animate([{ opacity: 0, transform: 'scale(1.08)' }, { opacity: 1, transform: 'scale(1)' }], { duration: 600, easing: 'cubic-bezier(.2,.9,.25,1)' });
-      $('.hero-text').animate([{ opacity: 0, transform: 'translateY(12px)' }, { opacity: 1, transform: 'none' }], { duration: 450, delay: 80, easing: 'ease-out', fill: 'backwards' });
-    }
+  if (hero.dataset.key !== selDeck || hero.dataset.art !== art) {
+    const first = !hero.dataset.key;
+    hero.dataset.key = selDeck; hero.dataset.art = art;
+    const front = hero.dataset.front || 'a', next = first ? front : front === 'a' ? 'b' : 'a';
+    $('#art-' + next).style.backgroundImage = art ? `url('${art}')` : '';
+    if (!first) { $('#art-' + next).classList.remove('out'); $('#art-' + front).classList.add('out'); hero.dataset.front = next; }
+    else hero.dataset.front = front;
   }
-  const order = deckOrder(), at = order.indexOf(selDeck);
-  $('#hero-count').textContent = `${at + 1} / ${order.length}`;
-  $('#hero-kicker').innerHTML = d ? (d.community ? `Community Horde · by ${esc(d.author || 'unknown')}${d.source ? ` · <a href="${d.source}" target="_blank" rel="noopener">original deck</a>` : ''}` : 'Horde deck')
-    : sv ? 'Your saved Horde' : 'Your own Horde';
   $('#hero-name').textContent = d ? d.name : sv ? sv.name : 'Custom list';
-  $('#hero-intro').textContent = d ? d.intro || '' : 'Paste any list below: one card per line, tokens included.';
-  $('#hero-rules').innerHTML = d?.rules ? `<b>Special rules</b> ${esc(d.rules)}` : '<b>Special rules</b> All creatures controlled by the Horde have haste.';
-  // Long rules are cut to a few lines; "Read more" opens them in place.
-  $('.hero-text').classList.remove('open');
-  requestAnimationFrame(() => { const r = $('#hero-rules'); $('#hero-more').hidden = r.scrollHeight <= r.clientHeight + 2; });
+  $('#hero-credit').innerHTML = d?.community ? `by ${esc(d.author || 'unknown')}${d.source ? ` · <a href="${d.source}" target="_blank" rel="noopener">original deck</a>` : ''}` : '';
 
   $('#custom-box').hidden = selDeck !== 'custom' && !sv;
   $('#custom-del').hidden = !sv;
@@ -108,14 +101,10 @@ function stepDeck(d) {
   const order = deckOrder();
   selectDeck(order[(order.indexOf(selDeck) + d + order.length) % order.length]);
 }
-$('#hero').addEventListener('click', e => {
-  const b = e.target.closest('[data-nav]');
-  if (b) stepDeck(+b.dataset.nav);
-  else if (e.target.closest('#hero-more')) { const t = $('.hero-text'); t.classList.toggle('open'); $('#hero-more').textContent = t.classList.contains('open') ? 'Show less' : 'Read more'; }
-});
+$('#hero').addEventListener('click', e => { const b = e.target.closest('[data-nav]'); if (b) stepDeck(+b.dataset.nav); });
 // swipe on touch screens
 let swipeX = null;
-$('#hero').addEventListener('pointerdown', e => { if (e.pointerType === 'touch') swipeX = e.clientX; });
+$('#hero').addEventListener('pointerdown', e => { if (e.pointerType === 'touch' && !e.target.closest('.s-settings, .s-custom, .s-thumbs')) swipeX = e.clientX; });
 $('#hero').addEventListener('pointerup', e => { if (swipeX != null && Math.abs(e.clientX - swipeX) > 50) stepDeck(e.clientX < swipeX ? 1 : -1); swipeX = null; });
 document.addEventListener('keydown', e => {
   if ($('#setup').classList.contains('off') || e.target.matches?.('input, textarea, select')) return;

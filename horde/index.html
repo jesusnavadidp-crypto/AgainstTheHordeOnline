@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=17">
+<link rel="stylesheet" href="styles.css?v=18">
 </head>
 <body>
 
@@ -223,37 +223,30 @@ or
 
 <!-- ============ SETUP ============ -->
 <div id="setup">
-  <div class="setup-inner">
-    <h1><span class="sigil big"></span>Horde Table</h1>
-    <p class="lead">Cooperative Magic for 1–4 Survivors against an automated Horde. Pick a Horde, set the difficulty, and survive.</p>
-    <button class="ghost-btn" id="btn-continue" hidden>Continue saved game</button>
-    <section class="online" id="online-box">
-      <div class="online-head"><b>Play online</b><span>Join a friend's room with its code, or pick a Horde below and create your own room. Everyone in a room sees and controls the same table.</span></div>
-      <div class="online-row">
-        <input id="net-name" maxlength="24" placeholder="Your name" autocomplete="nickname">
-        <span class="join" id="join-row"><input id="net-code" maxlength="8" placeholder="Room code" autocapitalize="characters"><button class="primary big" id="btn-join">Join room</button></span>
-        <button class="ghost-btn" id="btn-leave" hidden>Leave room</button>
-      </div>
-      <p class="online-msg"><span id="net-in"></span> <span id="net-msg"></span></p>
-    </section>
-    <!-- The chosen Horde, big; browse with the arrows, the strip below or ← → ; its settings underneath -->
-    <section class="stage">
-      <div class="hero" id="hero">
-        <div class="hero-art" id="hero-art"></div>
-        <button class="hero-nav prev" data-nav="-1" aria-label="Previous Horde">‹</button>
-        <button class="hero-nav next" data-nav="1" aria-label="Next Horde">›</button>
-        <div class="hero-text">
-          <div class="hero-kicker" id="hero-kicker"></div>
-          <h2 id="hero-name"></h2>
-          <p class="hero-intro" id="hero-intro"></p>
-          <p class="hero-rules" id="hero-rules"></p>
-          <button class="hero-more" id="hero-more" hidden>Read more</button>
-        </div>
-        <div class="hero-count" id="hero-count"></div>
-      </div>
-      <div class="decks thumbs" id="deck-grid"></div>
-      <div class="stage-body">
-    <div class="custom" id="custom-box" hidden>
+  <header class="s-top">
+    <div class="s-title"><span class="sigil"></span>Against the Horde</div>
+    <div class="s-online" id="online-box">
+      <button class="s-btn" id="btn-continue" hidden>Continue saved game</button>
+      <span class="s-in" id="net-in"></span>
+      <input id="net-name" maxlength="24" placeholder="Your name" autocomplete="nickname">
+      <span class="join" id="join-row"><input id="net-code" maxlength="8" placeholder="Room code" autocapitalize="characters"><button class="s-btn" id="btn-join">Join</button></span>
+      <button class="s-btn" id="btn-leave" hidden>Leave room</button>
+    </div>
+    <p class="s-msg"><span id="net-msg"></span></p>
+  </header>
+
+  <!-- The chosen Horde fills the screen: its name on top, every Horde as a mini picture, the settings at the bottom -->
+  <main class="s-stage" id="hero">
+    <div class="s-art" id="art-a"></div>
+    <div class="s-art out" id="art-b"></div>
+    <button class="s-nav prev" data-nav="-1" aria-label="Previous Horde">‹</button>
+    <button class="s-nav next" data-nav="1" aria-label="Next Horde">›</button>
+    <div class="s-name">
+      <h1 id="hero-name"></h1>
+      <p class="s-credit" id="hero-credit"></p>
+      <div class="s-thumbs" id="deck-grid"></div>
+    </div>
+    <div class="custom s-custom" id="custom-box" hidden>
       <div class="custom-head"><input id="custom-name" maxlength="40" placeholder="Name this Horde to save it (optional)"><button class="ghost-btn" id="custom-del" hidden>Delete saved Horde</button></div>
       <textarea id="custom-text" spellcheck="false" placeholder="Paste a Horde list. One card per line:
 40 Zombie token
@@ -262,14 +255,14 @@ or
 
 Also accepts the against-the-horde.com export format."></textarea>
     </div>
-    <div class="opts" id="opts"></div>
-    <div class="setup-go"><span id="setup-status"></span><button class="primary big" id="btn-start" title="Uses the Horde and options chosen above">Create room</button></div>
-      </div>
+    <section class="s-settings">
+      <div class="opts" id="opts"></div>
+      <div class="s-go"><span id="setup-status"></span><button class="primary big s-create" id="btn-start" title="Uses the Horde and options chosen here">Create room</button></div>
     </section>
-    <p class="legal">Unofficial Fan Content permitted under the Fan Content Policy. Not approved/endorsed by Wizards. Portions of the materials used are property of Wizards of the Coast. ©Wizards of the Coast LLC. Card data and images via Scryfall. Horde decks from against-the-horde.com (Peter Knudson, TenkayCrit).</p>
-  </div>
+  </main>
+  <p class="legal s-legal">Unofficial Fan Content permitted under the Fan Content Policy. Not approved/endorsed by Wizards. Portions of the materials used are property of Wizards of the Coast. ©Wizards of the Coast LLC. Card data and images via Scryfall. Horde decks from against-the-horde.com (Peter Knudson, TenkayCrit).</p>
 </div>
 
-<script type="module" src="js/app.js?v=17"></script>
+<script type="module" src="js/app.js?v=18"></script>
 </body>
 </html>
