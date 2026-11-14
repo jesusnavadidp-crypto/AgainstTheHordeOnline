@@ -3,7 +3,8 @@
 
 export const PILES = ['library', 'graveyard', 'exile'];
 // Each Survivor ("seat") has their own zones. Their cards carry `owner: seatId`.
-export const SEAT_ZONES = ['library', 'hand', 'battlefield', 'graveyard', 'exile', 'command'];
+export const SEAT_ZONES = ['library', 'hand', 'battlefield', 'graveyard', 'exile', 'command', 'stolen'];
+// 'stolen': cards a Survivor exiled from someone else (usually the Horde's library) and may play.
 const seatZones = () => Object.fromEntries(SEAT_ZONES.map(z => [z, []]));
 /** The zones object a card lives in: its owner's, or the Horde's. */
 const own = (o, k) => !!o && Object.hasOwn(o, k);
@@ -105,11 +106,18 @@ function put(s, id, to, pos) {
     if (c.blockedBy && s.cards[c.blockedBy]) s.cards[c.blockedBy].blocking = null;
     c.tapped = false; c.counters = 0; c.attacking = false; c.blocked = false; c.blockedBy = null; c.blocking = null;
   }
-  if (c.token && !['battlefield', 'reveal', 'stack'].includes(to) && !s.opts.tokensPersist) {
+  if (c.token && !['battlefield', 'reveal', 'stack', 'stolen'].includes(to) && !s.opts.tokensPersist) {
     delete s.cards[id];
     return 'vanish';
   }
+  // A card under someone else's control goes back to its owner once it leaves the battlefield
+  // (or the "exiled by you" row): to the owner's graveyard, hand, library or exile.
+  if (c.orig !== undefined && !['battlefield', 'stolen'].includes(to)) {
+    c.owner = c.orig && seatOf(s, c.orig) ? c.orig : undefined;
+    c.orig = undefined;
+  }
   const zs = homeOf(s, c);
+  if (to === 'stolen' && zs && !zs.stolen && c.owner) zs.stolen = [];          // seats from before this zone existed
   if (!zs[to]) to = 'graveyard';                    // e.g. a Survivor card sent to the Horde's stack
   if (to === 'battlefield' && from !== 'battlefield') { c.enteredTurn = s.turn; c.enteredS = s.sTurn; }
   if (to === 'library') pos === 'bottom' ? zs.library.push(id) : zs.library.unshift(id);
@@ -306,6 +314,47 @@ export function reduce(s0, a) {
       }
       break;
     }
+    case 'ORDER': {
+      // Rearrange a battlefield: put `ids` just before (or after) the card `target`.
+      const t = s.cards[a.target];
+      if (!t) break;
+      const zs = homeOf(s, t), zn = zoneOf(s, t.id);
+      if (!zs || !zn) break;
+      const ids = [...new Set(a.ids || [])].filter(id => id !== t.id && s.cards[id] && zs[zn].includes(id));
+      if (!ids.length) break;
+      const list = zs[zn].filter(id => !ids.includes(id));
+      list.splice(list.indexOf(t.id) + (a.after ? 1 : 0), 0, ...ids);
+      zs[zn] = list;
+      break;
+    }
+    case 'TAKE': {
+      // Cards change sides: gain (or give back) control of permanents, or exile cards "for" a
+      // Survivor, who may play them. seat: the new controller (none = the Horde).
+      const side = a.seat == null ? null : seatOf(s, a.seat) ? a.seat : undefined;
+      if (side === undefined || !['battlefield', 'stolen'].includes(a.to) || (a.to === 'stolen' && !side)) break;
+      const ids = [...new Set(a.ids || [])].filter(id => s.cards[id] && ((s.cards[id].owner || null) !== side || (a.to === 'stolen' && zoneOf(s, id) !== 'stolen')));
+      if (!ids.length) break;
+      const label = names(s, ids);
+      for (const id of ids) {
+        const c = s.cards[id];
+        const was = zoneOf(s, id);
+        if (c.orig === undefined) c.orig = c.owner || null;                      // null: the Horde owns it
+        c.owner = side || undefined;
+        if ((c.orig || null) === (c.owner || null)) c.orig = undefined;           // back with its owner
+        if (was === 'battlefield' && a.to === 'battlefield') {                    // a change of control
+          detach(s, id);
+          if (c.blocking && s.cards[c.blocking]) s.cards[c.blocking].blockedBy = null;
+          if (c.blockedBy && s.cards[c.blockedBy]) s.cards[c.blockedBy].blocking = null;
+          c.attacking = false; c.blocked = false; c.blocking = null; c.blockedBy = null; c.lane = null;
+          homeOf(s, c).battlefield.push(id);
+          c.enteredTurn = s.turn; c.enteredS = s.sTurn;
+        } else put(s, id, a.to);
+      }
+      const who = side ? seatName(s, side) : 'The Horde';
+      log(s, a.to === 'stolen' ? `${who} exiles ${label} (and may play ${ids.length > 1 ? 'them' : 'it'}).`
+        : `${who} gains control of ${label}.`);
+      break;
+    }
     case 'LANE': {
       // Which lane of a Survivor's board a card sits in (null: decided by its type).
       for (const id of a.ids || []) if (s.cards[id]) s.cards[id].lane = ['cre', 'oth', 'land'].includes(a.lane) ? a.lane : null;
@@ -363,7 +412,14 @@ export function reduce(s0, a) {
       if (!own(s.seats, a.seat)) s.seats[a.seat] = { id: a.seat, name: a.name || 'Survivor', deckName: null, zones: seatZones() };
       const seat = s.seats[a.seat];
       if (a.name) seat.name = a.name;
-      for (const zn of SEAT_ZONES) { for (const id of seat.zones[zn]) delete s.cards[id]; seat.zones[zn] = []; }
+      for (const zn of SEAT_ZONES) {
+        for (const id of seat.zones[zn] || []) {
+          const c = s.cards[id];
+          if (c?.orig !== undefined) put(s, id, 'graveyard');                    // borrowed cards go home
+          else delete s.cards[id];
+        }
+        seat.zones[zn] = [];
+      }
       const main = [];
       for (const e of a.entries || []) {
         const id = s.nextId++;

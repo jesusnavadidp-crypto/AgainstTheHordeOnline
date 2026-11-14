@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=18">
+<link rel="stylesheet" href="styles.css?v=19">
 </head>
 <body>
 
@@ -100,8 +100,11 @@
     <div class="dock-main">
       <div class="dock-board" data-drop="s:battlefield">
         <div class="lane lane-cre" data-label="Creatures" data-drop="s:battlefield" data-lk="cre"><div class="row creatures" id="seat-creatures"></div></div>
-        <div class="lane lane-land" data-label="Lands" data-drop="s:battlefield" data-lk="land"><div class="row lands" id="seat-lands"></div></div>
-        <div class="lane lane-oth" data-label="Other permanents" data-drop="s:battlefield" data-lk="oth"><div class="row other" id="seat-other"></div></div>
+        <div class="lane-row">
+          <div class="lane lane-land" data-label="Lands" data-drop="s:battlefield" data-lk="land"><div class="row lands" id="seat-lands"></div></div>
+          <div class="lane lane-oth" data-label="Other permanents" data-drop="s:battlefield" data-lk="oth"><div class="row other" id="seat-other"></div></div>
+          <div class="lane lane-stolen" data-label="Exiled by you · you may play these" data-drop="s:stolen"><div class="row" id="seat-stolen"></div></div>
+        </div>
         <div class="dock-empty" id="dock-empty"></div>
       </div>
       <div class="mull-bar" id="mull-bar" hidden></div>
@@ -263,6 +266,6 @@ Also accepts the against-the-horde.com export format."></textarea>
   <p class="legal s-legal">Unofficial Fan Content permitted under the Fan Content Policy. Not approved/endorsed by Wizards. Portions of the materials used are property of Wizards of the Coast. ©Wizards of the Coast LLC. Card data and images via Scryfall. Horde decks from against-the-horde.com (Peter Knudson, TenkayCrit).</p>
 </div>
 
-<script type="module" src="js/app.js?v=18"></script>
+<script type="module" src="js/app.js?v=19"></script>
 </body>
 </html>

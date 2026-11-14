@@ -817,3 +817,20 @@ body.dragging #seat-hand .card .tilt { transform: none; }
 @media (max-width: 760px) { .s-online { justify-content: flex-start; } .s-name { top: 200px; } .s-stage { padding-top: max(64vh, 440px); } }
 .s-thumbs { margin: 0 0 22px; } .s-name { top: clamp(84px, 11vh, 110px); }
 @media (max-width: 760px) { .s-name { top: 160px; } }
+
+/* "Exiled by you": Horde cards you may play, kept face up across the bottom of your board */
+.dock-board .lane-stolen { grid-column: 1 / -1; background: rgba(95,168,255,.05); border: 1px dashed rgba(95,168,255,.35); }
+.dock-board .lane-stolen::before { writing-mode: horizontal-tb; transform: none; top: 3px; left: 10px; color: #9fc8ff; }
+.dock-board .lane-stolen .row { padding-top: 14px; }
+#seat-stolen .card .face.front { box-shadow: 0 0 0 1px rgba(95,168,255,.6), 0 4px 12px rgba(0,0,0,.55); }
+body.dragging .dock-board .lane-stolen { display: block; min-height: 46px; }
+/* a card someone else owns, under your control */
+.card.borrowed .face.front { box-shadow: 0 0 0 2px #9fc8ff, 0 4px 12px rgba(0,0,0,.55); }
+
+/* second row of your board: lands | other permanents | exiled by you, side by side */
+.dock-board { display: flex !important; flex-direction: column !important; }
+.dock-board .lane-row { display: flex; gap: 14px; min-width: 0; }
+.dock-board .lane-row > .lane { flex: 1 1 0; min-width: 0; }
+.dock-board .lane-row:not(:has(.card)) { display: none; }
+body.dragging .dock-board .lane-row { display: flex; }
+.dock-board .lane-stolen { flex-grow: 1; }

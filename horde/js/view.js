@@ -1,6 +1,6 @@
 // Board renderer. Cards are keyed DOM elements that persist between renders;
 // every move between zones is animated with FLIP (First-Last-Invert-Play).
-import { PILES, canAttack, survivorSick } from './game.js?v=18';
+import { PILES, canAttack, survivorSick } from './game.js?v=19';
 
 const els = new Map();          // entity key -> element
 let prevZone = {};              // card id -> zone at last render
@@ -42,7 +42,7 @@ export function power(s, db, c) {
 
 function entities(s, db) {
   const out = { 'bf-creatures': [], 'bf-other': [], 'attack-lane': [], 'reveal-lane': [], 'stack-lane': [], 'hand-row': [],
-    'seat-creatures': [], 'seat-lands': [], 'seat-other': [], 'seat-hand': [] };
+    'seat-creatures': [], 'seat-lands': [], 'seat-other': [], 'seat-hand': [], 'seat-stolen': [] };
   const groups = new Map();
   // Attached cards (Auras, Equipment) are drawn tucked behind their host, so they and their
   // hosts never merge into a token or land stack.
@@ -70,6 +70,7 @@ function entities(s, db) {
         g.ids.push(id);
       } else out[cont].push({ key: 'c:' + id, ids: [id], cont });
     }
+    for (const id of seat.zones.stolen || []) out['seat-stolen'].push({ key: 'c:' + id, ids: [id], cont: 'seat-stolen' });
     if (view.seat === view.me) for (const id of seat.zones.hand) out['seat-hand'].push({ key: 'c:' + id, ids: [id], cont: 'seat-hand' });
   }
   for (const id of s.zones.battlefield) {
@@ -128,6 +129,7 @@ function update(el, e, s, db) {
   el.classList.toggle('stacked', n > 1);
   el.classList.toggle('stacked3', n > 2);
   el.classList.toggle('attached', !!e.attached);
+  el.classList.toggle('borrowed', c.orig !== undefined);          // someone else owns it
   const seatBoard = ['seat-creatures', 'seat-other', 'seat-lands'].includes(e.cont);
   el.classList.toggle('sick', c.owner
     ? seatBoard && c.creature && !e.attached && survivorSick(s, c) && !hasKw(db, c, 'haste')

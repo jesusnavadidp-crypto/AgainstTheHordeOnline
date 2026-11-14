@@ -108,7 +108,7 @@ const isState = (s) => s && typeof s === 'object' && !Array.isArray(s) && s.zone
 const ACTIONS = new Set(['MOVE', 'REVEAL', 'DRAW', 'GATHER_CASTS', 'CAST_REVEALED', 'RESOLVE_STACK', 'START_HORDE_TURN', 'PHASE',
   'BEGIN_COMBAT', 'ATTACK', 'BLOCK', 'END_COMBAT', 'END_SURVIVOR_TURN', 'LIFE', 'POISON', 'HORDE_LIFE', 'MILL', 'DAMAGE_HORDE',
   'TAP', 'COUNTER', 'CREATE', 'SHUFFLE', 'ANTHEM', 'NOTE',
-  'SEAT', 'SEAT_DECK', 'SEAT_DRAW', 'SEAT_SHUFFLE', 'SEAT_MULLIGAN', 'UNTAP_ALL', 'SURVIVOR_ATTACK', 'GY_TO_LIBRARY', 'SET_OPT', 'ATTACH', 'FLIP', 'CMD_DEATH', 'SEAT_KEEP', 'LANE']);
+  'SEAT', 'SEAT_DECK', 'SEAT_DRAW', 'SEAT_SHUFFLE', 'SEAT_MULLIGAN', 'UNTAP_ALL', 'SURVIVOR_ATTACK', 'GY_TO_LIBRARY', 'SET_OPT', 'ATTACH', 'FLIP', 'CMD_DEATH', 'SEAT_KEEP', 'LANE', 'ORDER', 'TAKE']);
 const int = (v, lo, hi) => Number.isInteger(v) && v >= lo && v <= hi;
 const num = (v) => typeof v === 'number' && Number.isFinite(v) && Math.abs(v) <= 1e6;
 const str = (v, max = 500) => typeof v === 'string' && v.length <= max;
@@ -122,9 +122,11 @@ function validAction(a) {
   if ('v' in a && !num(a.v) && typeof a.v !== 'boolean') return false;          // TAP/BLOCK/ATTACK use booleans
   for (const k of ['ids', 'order', 'kill', 'tap']) if (k in a && !idList(a[k])) return false;
   if ('n' in a && !int(a.n, 0, 500)) return false;
-  for (const k of ['id', 'by', 'host']) if (k in a && a[k] !== null && !int(a[k], 0, 1e7)) return false;
+  for (const k of ['id', 'by', 'host', 'target']) if (k in a && a[k] !== null && !int(a[k], 0, 1e7)) return false;
   if ('hand' in a && !int(a.hand, 0, 30)) return false;
   if ('aura' in a && typeof a.aura !== 'boolean') return false;
+  if ('after' in a && typeof a.after !== 'boolean') return false;
+  if (a.t === 'ORDER' && !int(a.target, 0, 1e7)) return false;
   if (['ATTACH', 'CMD_DEATH'].includes(a.t) && !int(a.id, 0, 1e7)) return false;
   if ('lane' in a && a.lane !== null && !['cre', 'oth', 'land'].includes(a.lane)) return false;
   if ('freeMull' in a && typeof a.freeMull !== 'boolean') return false;
@@ -136,7 +138,7 @@ function validAction(a) {
   // Seat ids are client ids (UUIDs, or 'local'): never anything like __proto__.
   for (const k of ['seat', 'owner']) if (k in a && a[k] !== undefined && !(typeof a[k] === 'string' && /^[A-Za-z0-9-]{1,64}$/.test(a[k]))) return false;
   if (['END_COMBAT', 'SURVIVOR_ATTACK'].includes(a.t) && !(num(a.damage) && a.damage >= 0)) return false;
-  if (['MOVE', 'TAP', 'COUNTER', 'BLOCK', 'ATTACK', 'BEGIN_COMBAT', 'FLIP', 'LANE'].includes(a.t) && !Array.isArray(a.ids)) return false;
+  if (['MOVE', 'TAP', 'COUNTER', 'BLOCK', 'ATTACK', 'BEGIN_COMBAT', 'FLIP', 'LANE', 'ORDER', 'TAKE'].includes(a.t) && !Array.isArray(a.ids)) return false;
   if ('entries' in a && !(Array.isArray(a.entries) && a.entries.length <= 400 && a.entries.every(entry))) return false;
   if ('counters' in a && !(Array.isArray(a.counters) && a.counters.length <= 200 && a.counters.every(x => Array.isArray(x) && int(x[0], 0, 1e7) && num(x[1])))) return false;
   return true;

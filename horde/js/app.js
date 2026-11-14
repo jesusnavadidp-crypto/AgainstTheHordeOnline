@@ -1,10 +1,10 @@
-import { DECKS, parseDeck, buildLibrary, shuffle } from './deck.js?v=18';
-import { db, ensure, resolveNames, searchTokens, resolveDeck } from './scryfall.js?v=18';
-import { parseDecklist } from './decklist.js?v=18';
-import { initState, reduce, zoneOf, canAttack, status, PILES, survivorSick, seatOf } from './game.js?v=18';
-import { render, resetView, power, esc, hasKw, face, isWalker, autoLane } from './view.js?v=18';
-import { stampLog } from './stamp.js?v=18';
-import { connectNet, clientId } from './net.js?v=18';
+import { DECKS, parseDeck, buildLibrary, shuffle } from './deck.js?v=19';
+import { db, ensure, resolveNames, searchTokens, resolveDeck } from './scryfall.js?v=19';
+import { parseDecklist } from './decklist.js?v=19';
+import { initState, reduce, zoneOf, canAttack, status, PILES, survivorSick, seatOf } from './game.js?v=19';
+import { render, resetView, power, esc, hasKw, face, isWalker, autoLane } from './view.js?v=19';
+import { stampLog } from './stamp.js?v=19';
+import { connectNet, clientId } from './net.js?v=19';
 
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
@@ -815,6 +815,10 @@ function itemsFor(ids, zone) {
   const out = [];
   if (!c.token && db[c.ref]?.parts?.length) out.push(I('Create its tokens…', () => openTokens(c.owner ? 'me' : 'horde')));
   if (c.commander && zone !== 'command') out.push(I('Return to command zone', mv('command')));
+  if (zone === 'battlefield' && ids.length) {
+    if (!c.owner && state.seats?.[mySeat()]) out.push(I(c.orig === mySeat() ? 'Take it back' : 'Gain control of it', k => dispatch({ t: 'TAKE', ids: ids.slice(0, k), seat: mySeat(), to: 'battlefield' })));
+    else if (c.owner && c.orig !== undefined) out.push(I('Give it back', k => dispatch({ t: 'TAKE', ids: ids.slice(0, k), seat: c.orig || undefined, to: 'battlefield' })));
+  }
   if (zone === 'battlefield' && c.owner) {
     const cur = c.lane || autoLane(db, c);
     for (const [ln, label] of [['cre', 'Creatures'], ['land', 'Lands'], ['oth', 'Other permanents']])
@@ -954,6 +958,10 @@ $('#pile-library').addEventListener('click', e => {
     title: 'Horde library', max: n, items: [
       { label: 'Mill', fn: k => dispatch({ t: 'MILL', n: k }), kbd: 'M' },
       { label: 'Exile from the top', fn: k => dispatch({ t: 'MOVE', ids: state.zones.library.slice(0, k), to: 'exile' }) },
+      { label: 'Exile from the top for me', hint: 'I may play it', fn: k => {
+        const me = mySeat(), go = () => dispatch({ t: 'TAKE', ids: state.zones.library.slice(0, k), seat: me, to: 'stolen' });
+        if (!state.seats?.[me]) dispatch({ t: 'SEAT', seat: me, name: myDisplayName() }, false).then(go); else go();
+      } },
       { label: 'Draw into Horde hand', fn: k => dispatch({ t: 'DRAW', n: k }), hint: 'cast next turn' },
       { label: 'Reveal and cast now', fn: async k => {
         busy = true;
@@ -1242,22 +1250,23 @@ function fitHand() {
 }
 // Two lanes: creatures on top; lands and other permanents side by side below. Each lane wraps.
 function fitLanes(box, reserve, min, max) {
-  const groups = [[$('#seat-creatures')], [$('#seat-lands'), $('#seat-other')]];
+  const groups = [[$('#seat-creatures')], [$('#seat-lands'), $('#seat-other'), $('#seat-stolen')]];
   const W0 = box.clientWidth - 40, H = (box.clientHeight - reserve) * 0.97;
   const all = groups.flat();
-  const stat = r => ({ n: r.children.length, tapped: r.querySelectorAll('.card.tapped').length, att: r.querySelectorAll('.card.attached').length });
+  const stat = r => ({ n: r.children.length, tapped: r.querySelectorAll('.card.tapped').length, att: r.querySelectorAll('.card.attached').length,
+    label: r.id === 'seat-stolen' ? 18 : 0 });                              // that row has its title above the cards
   const live = groups.map(g => g.filter(r => r.children.length).map(stat)).filter(g => g.length);
   if (!live.length || W0 <= 0 || H <= 0) { for (const r of all) r.style.removeProperty('--cw'); return; }
   let cw = max;
   for (; cw > min; cw -= 2) {
     let need = 0;
     for (const g of live) {
-      const W = g.length > 1 ? (W0 - 30) / 2 : W0;
+      const W = (W0 - 30 * (g.length - 1)) / g.length;                   // lanes side by side share the width
       let h = 0;
       for (const L of g) {
         const w = cw * (1 + .42 * L.tapped / L.n) + 12;                    // tapped cards are rotated, so wider
         const lines = Math.ceil((L.n - L.att) / Math.max(1, Math.floor((W + 12) / w)));   // attached cards tuck behind
-        h = Math.max(h, lines * (cw * 88 / 63) + (lines - 1) * 14 + (L.att ? cw * 0.42 : 0));
+        h = Math.max(h, lines * (cw * 88 / 63) + (lines - 1) * 14 + (L.att ? cw * 0.42 : 0) + L.label);
       }
       need += h + 8 + 6;                                                       // lane padding, gap between lanes
     }
@@ -1678,12 +1687,15 @@ document.addEventListener('pointerup', e => {
     if (!e.target.closest('.act')) openCardMenu(d.card, e.clientX, e.clientY);
     return;
   }
+  // What's under the pointer, measured while the board still has its "dragging" layout
+  // (empty lanes collapse once it ends, which moves everything).
+  const onCard = document.elementFromPoint(e.clientX, e.clientY)?.closest('.card:not(.ghost)');
+  const dropAt = dropTarget(e.clientX, e.clientY);
   document.body.classList.remove('dragging');
   d.hot?.classList.remove('drop-hot');
   const gr = d.ghost.getBoundingClientRect();
   d.ghost.remove();
   d.card.style.opacity = '';
-  const onCard = document.elementFromPoint(e.clientX, e.clientY)?.closest('.card:not(.ghost)');
   const moving = state.cards[d.card._ids[0]];
   if (onCard && onCard !== d.card && onCard._ids && isAttachable(moving)) {
     const host = state.cards[onCard._ids[0]];
@@ -1693,21 +1705,39 @@ document.addEventListener('pointerup', e => {
       return;
     }
   }
-  const target = dropTarget(e.clientX, e.clientY);
+  const target = dropAt;
   if (!target) return;
-  const to = target.dataset.drop.replace(/^s:/, '');   // dock zones are the card owner's zones
+  const to = target.dataset.drop.replace(/^s:/, '');   // dock zones are the shown player's zones
   const ids = d.shift ? d.card._ids : [d.card._ids[0]];
   const from = zoneOf(state, ids[0]);
-  // Dropped on a lane of your board: it stays there (null = the lane its type would pick anyway).
-  const lk = target.dataset.lk, c0 = state.cards[ids[0]];
-  const setLane = () => lk && c0.owner && dispatch({ t: 'LANE', ids, lane: lk === autoLane(db, state.cards[ids[0]] || c0) ? null : lk });
-  if (to === from) { if (to === 'battlefield' && lk && lk !== (c0.lane || autoLane(db, c0))) setLane(); return; }
+  const c0 = state.cards[ids[0]];
+  // Which side of the table it was dropped on: a Survivor's board, or the Horde's.
+  const sideTo = target.dataset.drop.startsWith('s:') ? viewSeat || mySeat() : null, sideFrom = c0.owner || null;
+  if (['battlefield', 'stolen'].includes(to) && (sideTo !== sideFrom || (to === 'stolen' && from !== 'stolen'))) {
+    // Gain control of it (or hand it back), or exile it "for" yourself to play later.
+    const go = () => dispatch({ t: 'TAKE', ids, seat: sideTo || undefined, to });
+    if (sideTo && !state.seats?.[sideTo]) dispatch({ t: 'SEAT', seat: sideTo, name: myDisplayName() }, false).then(go); else go();
+    return;
+  }
+  // Dropped on another card of the same battlefield: put it just before or after that card
+  // (and in that card's lane on a Survivor board).
+  const onOther = onCard && onCard !== d.card && onCard._ids && !onCard._ids.includes(ids[0]) ? state.cards[onCard._ids[0]] : null;
+  if (onOther && from === 'battlefield' && to === 'battlefield' && zoneOf(state, onOther.id) === 'battlefield' && (onOther.owner || null) === sideFrom) {
+    const r = onCard.getBoundingClientRect();
+    dispatch({ t: 'ORDER', ids, target: onOther.id, after: e.clientX > r.left + r.width / 2 });
+    const lane = onOther.owner ? onOther.lane || autoLane(db, onOther) : null;
+    if (lane && lane !== (c0.lane || autoLane(db, c0))) dispatch({ t: 'LANE', ids, lane: lane === autoLane(db, c0) ? null : lane });
+    return;
+  }
+  // Moved to another lane of your board: it stays there (null = the lane its type would pick anyway).
+  const lk = target.dataset.lk;
+  if (to === from) { if (to === 'battlefield' && lk && c0.owner && lk !== (c0.lane || autoLane(db, c0))) dispatch({ t: 'LANE', ids, lane: lk === autoLane(db, c0) ? null : lk }); return; }
   // Start the FLIP from where the card was dropped.
   if (ids.length === d.card._ids.length) {
     const cr = d.card.getBoundingClientRect();
     d.card.style.transform = `translate(${gr.left - cr.left}px, ${gr.top - cr.top}px)`;
   }
-  (to === 'battlefield' && from !== 'battlefield' ? castIds(ids).then(() => to === 'battlefield' && setLane()) : dispatch({ t: 'MOVE', ids, to, pos: 'top' })).then(afterResolve);
+  (to === 'battlefield' && from !== 'battlefield' ? castIds(ids) : dispatch({ t: 'MOVE', ids, to, pos: 'top' })).then(afterResolve);
 });
 
 /* =================== keyboard =================== */
