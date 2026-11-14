@@ -1,6 +1,6 @@
 // Board renderer. Cards are keyed DOM elements that persist between renders;
 // every move between zones is animated with FLIP (First-Last-Invert-Play).
-import { PILES, canAttack, survivorSick } from './game.js?v=14';
+import { PILES, canAttack, survivorSick } from './game.js?v=15';
 
 const els = new Map();          // entity key -> element
 let prevZone = {};              // card id -> zone at last render
@@ -10,15 +10,22 @@ const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const DUR = reduced ? 0 : 520;
 let view = { me: null, seat: null };   // whose board is shown in the Survivor dock, and who "I" am
 
+// The face a card shows: the back of a double-faced card once it has transformed.
+export function face(db, c) {
+  const d = db[c?.ref] || {};
+  if (!d.back) return d;
+  return c?.flipped ? { ...d, ...d.back } : { ...d, name: d.name.split(' // ')[0] };
+}
 // Keyword on the card's own keyword line (e.g. "Flying, haste").
 export function hasKw(db, c, kw) {
-  return new RegExp(`^(?:[\\w' -]+, )*${kw}\\b`, 'im').test(db[c.ref]?.text || '');
+  return new RegExp(`^(?:[\\w' -]+, )*${kw}\\b`, 'im').test(face(db, c).text || '');
 }
+export const isWalker = (db, c) => /\bPlaneswalker\b/.test(face(db, c).type || '');
 const onBattlefield = (s, c) => (c.owner ? s.seats?.[c.owner]?.zones.battlefield : s.zones.battlefield)?.includes(c.id);
 const isLib = z => z === 'library' || /:library$/.test(z || '');
 
 export function power(s, db, c) {
-  const d = db[c.ref] || {};
+  const d = face(db, c);
   const p = parseInt(d.power), t = parseInt(d.toughness);
   return {
     p: (isNaN(p) ? 0 : p) + c.counters + (c.owner ? 0 : s.anthem),
@@ -87,7 +94,7 @@ function cardShell() {
   const el = document.createElement('div');
   el.className = 'card';
   el.innerHTML = `<div class="tilt"><div class="inner"><div class="face front"><img alt="" draggable="false"><div class="fallback"></div></div><div class="face back"></div></div></div>
-    <div class="badge count"></div><div class="badge ctr"></div><div class="badge pt"></div><div class="acts"></div>`;
+    <div class="badge count"></div><div class="badge ctr"></div><div class="badge pt"></div><div class="badge loy"></div><div class="badge mk"></div><div class="acts"></div>`;
   return el;
 }
 
@@ -103,8 +110,9 @@ export const esc = s => String(s ?? '').replace(/[&<>"]/g, ch => ({ '&': '&amp;'
 
 function update(el, e, s, db) {
   const c = s.cards[e.ids[0]];
-  const d = db[c.ref];
-  setFace(el, d, c.name);
+  const d = face(db, c);
+  setFace(el, d, d.back ? d.name : c.name);
+  el.classList.toggle('dfc', !!db[c.ref]?.back);
   const n = e.ids.length;
   el.classList.toggle('tapped', c.tapped);
   el.classList.toggle('attacking', c.attacking);
@@ -122,11 +130,16 @@ function update(el, e, s, db) {
   el.querySelector('.count').textContent = n > 1 ? '×' + n : '';
   el.querySelector('.ctr').textContent = c.counters ? (c.counters > 0 ? '+' : '') + c.counters + '/' + (c.counters > 0 ? '+' : '') + c.counters : '';
   const pt = el.querySelector('.pt');
-  if (c.creature && onBattlefield(s, c)) {
+  if (c.creature && !isWalker(db, c) && onBattlefield(s, c)) {
     const { p, t } = power(s, db, c);
     pt.textContent = `${p}/${t}`;
     pt.classList.toggle('buffed', c.counters + (c.owner ? 0 : s.anthem) > 0);
   } else pt.textContent = '';
+  // Loyalty (planeswalkers on the battlefield) and any other counters a card tracks.
+  const loy = el.querySelector('.loy');
+  const base = parseInt(d?.loyalty);
+  loy.textContent = isWalker(db, c) && onBattlefield(s, c) ? String((isNaN(base) ? 0 : base) + (c.loy || 0)) : '';
+  el.querySelector('.mk').textContent = c.marks ? '◆ ' + c.marks : '';
 
   // contextual action buttons on the card
   let acts = '';

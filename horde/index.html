@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=14">
+<link rel="stylesheet" href="styles.css?v=15">
 </head>
 <body>
 
@@ -88,6 +88,7 @@
 <section class="dock" id="dock">
   <div class="dock-head">
     <div class="seat-tabs" id="seat-tabs"></div>
+    <div class="cmd-deaths" id="cmd-deaths"></div>
     <div class="dock-tools" id="dock-tools">
       <button class="chip" data-seat-act="draw">Draw</button>
       <button class="chip" data-seat-act="untap">Untap all</button>
@@ -103,6 +104,7 @@
         <div class="lane lane-oth" data-lane="Other permanents"><div class="row other" id="seat-other"></div></div>
         <div class="dock-empty" id="dock-empty"></div>
       </div>
+      <div class="mull-bar" id="mull-bar" hidden></div>
       <div class="seat-hand-wrap" data-drop="s:hand"><div class="row" id="seat-hand"></div></div>
     </div>
   </div>
@@ -143,7 +145,8 @@
       <p><kbd>P</kbd><span>Play it (from your hand)</span></p>
       <p><kbd>A</kbd><span>Attack the Horde with it (your turn)</span></p>
       <p><kbd>B</kbd><span>Block it (a Horde attacker)</span></p>
-      <p><kbd>+</kbd> / <kbd>−</kbd><span>+1/+1 or −1/−1 counter</span></p>
+      <p><kbd>+</kbd> / <kbd>−</kbd><span>Counters: +1/+1 on creatures, loyalty on planeswalkers, any counter on other cards</span></p>
+      <p><kbd>F</kbd><span>Transform a double-faced card</span></p>
       <h4>In a menu</h4>
       <p><kbd>letter</kbd><span>The item showing that letter</span></p>
     </div>
@@ -203,6 +206,15 @@ or
   </div>
 </div>
 
+<div class="modal" id="cmd-pick">
+  <div class="modal-card cmd-card">
+    <div class="drawer-head"><h3>Choose your commander</h3></div>
+    <p class="drawer-sub">These cards can lead your deck. Pick one, or several for partners and backgrounds. They start in your command zone.</p>
+    <div class="cmd-grid" id="cmd-grid"></div>
+    <div class="result-actions"><button class="ghost-btn" id="cmd-none">No commander</button><button class="primary" id="cmd-ok">Confirm</button></div>
+  </div>
+</div>
+
 <div class="modal" id="result">
   <div class="modal-card result-card"><h2 id="result-title"></h2><p id="result-text"></p>
     <div class="result-actions"><button class="ghost-btn" id="btn-keep">Keep playing</button><button class="primary" id="btn-again">New game</button></div>
@@ -242,6 +254,6 @@ Also accepts the against-the-horde.com export format."></textarea>
   </div>
 </div>
 
-<script type="module" src="js/app.js?v=14"></script>
+<script type="module" src="js/app.js?v=15"></script>
 </body>
 </html>

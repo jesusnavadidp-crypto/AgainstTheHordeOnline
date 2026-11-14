@@ -1,10 +1,10 @@
-import { DECKS, parseDeck, buildLibrary, shuffle } from './deck.js?v=14';
-import { db, ensure, resolveNames, searchTokens, resolveDeck } from './scryfall.js?v=14';
-import { parseDecklist } from './decklist.js?v=14';
-import { initState, reduce, zoneOf, canAttack, status, PILES, survivorSick, seatOf } from './game.js?v=14';
-import { render, resetView, power, esc, hasKw } from './view.js?v=14';
-import { stampLog } from './stamp.js?v=14';
-import { connectNet, clientId } from './net.js?v=14';
+import { DECKS, parseDeck, buildLibrary, shuffle } from './deck.js?v=15';
+import { db, ensure, resolveNames, searchTokens, resolveDeck } from './scryfall.js?v=15';
+import { parseDecklist } from './decklist.js?v=15';
+import { initState, reduce, zoneOf, canAttack, status, PILES, survivorSick, seatOf } from './game.js?v=15';
+import { render, resetView, power, esc, hasKw, face, isWalker } from './view.js?v=15';
+import { stampLog } from './stamp.js?v=15';
+import { connectNet, clientId } from './net.js?v=15';
 
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
@@ -528,6 +528,8 @@ function renderAll(prev) {
   // Some sizes (the hand row, fonts) settle only after the first paint: fit once more then.
   clearTimeout(refitRaf);
   refitRaf = setTimeout(fitBoards, 80);
+  for (const el of $$('#seat-hand .card')) el.classList.toggle('picked', !!mullPick?.has(el._ids[0]));
+  document.body.classList.toggle('mull-picking', !!mullPick);
   strikeAnims = strikeAnims.filter(({ el, anim }) => {
     if (anim.playState !== 'finished') return true;   // still flying: leave it
     anim.cancel(); el.style.zIndex = ''; return false;
@@ -767,8 +769,8 @@ function itemsFor(ids, zone) {
   const out = [];
   if (!c.token && db[c.ref]?.parts?.length) out.push(I('Create its tokens…', () => openTokens(c.owner ? 'me' : 'horde')));
   if (c.commander && zone !== 'command') out.push(I('Return to command zone', mv('command')));
-  if (c.owner && c.owner === mySeat() && !c.commander && !c.token && ['hand', 'library', 'graveyard', 'exile', 'battlefield'].includes(zone))
-    out.push(I('Make it your commander', () => dispatch({ t: 'COMMANDER', seat: mySeat(), id: c.id }), { hint: 'to command zone' }));
+  if (db[c.ref]?.back && ['battlefield', 'hand', 'command', 'exile', 'graveyard'].includes(zone))
+    out.push(I(c.flipped ? 'Transform back' : 'Transform', k => dispatch({ t: 'FLIP', ids: ids.slice(0, k) }), { kbd: 'F' }));
   if (zone === 'battlefield' && ids.length === 1) {
     if (c.attachedTo) out.push(I(`Unattach from ${state.cards[c.attachedTo]?.name || 'it'}`, () => dispatch({ t: 'ATTACH', id: c.id, host: null })));
     else if (!c.creature || isAttachable(c)) out.push(I('Attach to…', () => chooseHost(c.id), { hint: 'Aura, Equipment' }));
@@ -780,6 +782,12 @@ function itemsFor(ids, zone) {
       if (c.counters) out.push(I(c.counters > 0 ? 'Remove +1/+1 counter' : 'Remove −1/−1 counter', k => dispatch({ t: 'COUNTER', ids: ids.slice(0, k), d: c.counters > 0 ? -1 : 1 })));
       else out.push(I('Add −1/−1 counter', k => dispatch({ t: 'COUNTER', ids: ids.slice(0, k), d: -1 })));
     }
+    if (isWalker(db, c)) {
+      out.push(I('+1 loyalty', k => dispatch({ t: 'COUNTER', ids: ids.slice(0, k), d: 1, kind: 'loyalty' }), { kbd: '+' }));
+      out.push(I('−1 loyalty', k => dispatch({ t: 'COUNTER', ids: ids.slice(0, k), d: -1, kind: 'loyalty' }), { kbd: '−' }));
+    }
+    out.push(I('Add a counter', k => dispatch({ t: 'COUNTER', ids: ids.slice(0, k), d: 1, kind: 'generic' }), { hint: c.marks ? '◆ ' + c.marks : 'any kind' }));
+    if (c.marks) out.push(I('Remove a counter', k => dispatch({ t: 'COUNTER', ids: ids.slice(0, k), d: -1, kind: 'generic' })));
     if (c.owner && c.creature && state.phase === 'survivors')
       out.push(I(c.attacking ? 'Stop attacking' : 'Attack the Horde', k => dispatch({ t: 'ATTACK', ids: ids.slice(0, k), v: !c.attacking }, false)));
     if (state.phase === 'combat' && c.creature && !c.owner) {
@@ -808,6 +816,10 @@ function itemsFor(ids, zone) {
     if (zone !== 'hand') out.push(I(c.owner ? 'Put into hand' : "Put into Horde's hand", mv('hand')));
     if (zone !== 'graveyard') out.push(I(zone === 'hand' ? 'Discard' : 'Put into graveyard', mv('graveyard'), { danger: zone === 'hand' }));
     if (zone !== 'exile') out.push(I('Exile', mv('exile')));
+    if (zone === 'exile') {        // suspend, time counters, adventures…
+      out.push(I('Add a counter', k => dispatch({ t: 'COUNTER', ids: ids.slice(0, k), d: 1, kind: 'generic' }), { hint: c.marks ? '◆ ' + c.marks : '' }));
+      if (c.marks) out.push(I('Remove a counter', k => dispatch({ t: 'COUNTER', ids: ids.slice(0, k), d: -1, kind: 'generic' })));
+    }
     out.push(I('Put on top of library', mv('library', 'top')));
     out.push(I('Put on bottom of library', mv('library', 'bottom')));
   }
@@ -1173,7 +1185,10 @@ function fitHand() {
   const cw = row.children[0].offsetWidth || 80, W = row.clientWidth - 16;
   const ov = n > 1 ? Math.min(8, Math.max(-cw * 0.72, (W - n * cw) / (n - 1))) : 0;
   row.style.setProperty('--ov', ov + 'px');
-  row.style.setProperty('--hz', (Math.max(1.3, (HAND_ZOOM[viewPref.zoom] || 260) / cw)).toFixed(2));
+  const hz = Math.max(1.3, (HAND_ZOOM[viewPref.zoom] || 260) / cw);
+  row.style.setProperty('--hz', hz.toFixed(2));
+  // Carousel: the cards beside a hovered card slide away so the big card covers none of them.
+  row.style.setProperty('--push', Math.round(cw * (hz - 1) / 2 - ov + 10) + 'px');
 }
 // Two lanes: creatures on top; lands and other permanents side by side below. Each lane wraps.
 function fitLanes(box, reserve, min, max) {
@@ -1250,6 +1265,8 @@ function renderDock(s) {
     : `<span>${esc(seat?.name || 'This player')} hasn't brought a deck yet.</span>`;
   if ($('#dock-empty').innerHTML !== eh) $('#dock-empty').innerHTML = eh;
   document.body.classList.toggle('dock-compact', empty);
+  renderCmdDeaths(s, viewSeat, mine);
+  renderMull(s);
 }
 $('#seat-tabs').addEventListener('click', e => {
   const b = e.target.closest('[data-seat]');
@@ -1325,10 +1342,7 @@ document.addEventListener('click', e => {
   if (act === 'draw') dispatch({ t: 'SEAT_DRAW', seat: me, n: 1 });
   else if (act === 'untap') dispatch({ t: 'UNTAP_ALL', seat: me });
   else if (act === 'shuffle') dispatch({ t: 'SEAT_SHUFFLE', seat: me, order: shuffle(seat.zones.library) });
-  else if (act === 'mulligan') {
-    if (!confirm('Shuffle your hand into your library and draw 7? (Put cards on the bottom afterwards from their menu.)')) return;
-    dispatch({ t: 'SEAT_MULLIGAN', seat: me, order: shuffle([...seat.zones.library, ...seat.zones.hand]), n: 7 });
-  }
+  else if (act === 'mulligan') { $('#drawer-deck').classList.remove('on'); mulligan(); }
 });
 
 /* ----- your deck: links, pasted lists, saved decks ----- */
@@ -1380,13 +1394,21 @@ async function loadMyDeck(input, saveAs = '') {
     // Commander lists pasted without a "Commander" heading usually start with it (Moxfield, Archidekt
     // text exports): in a ~100-card singleton list with no commander, a legendary creature (or a card
     // that says it can be your commander) on the first line is the commander, plus a Partner on the second.
-    const canLead = c => { const d = c?.ref && db[c.ref]; return !!d && (/Legendary.*\b(Creature|Planeswalker)\b/.test(d.type) || /can be your commander/i.test(d.text || '')); };
+    const canLead = c => { const d = c?.ref && db[c.ref]; return !!d && (/Legendary.*\b(Creature|Planeswalker)\b|\bBackground\b/.test(d.type) || /can be your commander/i.test(d.text || '')); };
     const mainCards = cards.filter(c => c.section === 'main');
-    const total = mainCards.reduce((n, c) => n + (c.count || 1), 0);
+    const total = cards.reduce((n, c) => n + (c.count || 1), 0);
     if (!cards.some(c => c.section === 'commander') && total >= 98 && total <= 101 && canLead(mainCards[0]) && (mainCards[0].count || 1) === 1) {
       mainCards[0].section = 'commander';
       const d0 = db[mainCards[0].ref];
       if (/\bPartner\b|Choose a Background/i.test(d0?.text || '') && canLead(mainCards[1]) && (mainCards[1].count || 1) === 1) mainCards[1].section = 'commander';
+    }
+    // Commander decks: let the player confirm or change which cards are their commanders.
+    const isCommanderDeck = cards.some(c => c.section === 'commander') || (total >= 98 && total <= 101);
+    if (isCommanderDeck) {
+      st.textContent = 'Choose your commander…';
+      const cands = cards.filter(c => c.ref && db[c.ref] && (c.section === 'commander' || canLead(c)));
+      const chosen = await pickCommanders(cands);
+      for (const c of cards) if (c.section === 'commander' || chosen.has(c)) c.section = chosen.has(c) ? 'commander' : 'main';
     }
     const entries = [];
     for (const c of cards) {
@@ -1401,7 +1423,8 @@ async function loadMyDeck(input, saveAs = '') {
     if (entries.length > 400) throw new Error('That deck is too big (400 cards max).');
     const main = entries.filter(e => e.section === 'main').length;
     const deckName = saveAs || deck.name || 'My deck';
-    const r = await dispatch({ t: 'SEAT_DECK', seat: mySeat(), name: myDisplayName(), deckName, entries, order: shuffle([...Array(main).keys()]), hand: 7 });
+    const freeMull = entries.some(e => e.section === 'commander') || entries.length >= 98;   // multiplayer: first mulligan is free
+    const r = await dispatch({ t: 'SEAT_DECK', seat: mySeat(), name: myDisplayName(), deckName, entries, order: shuffle([...Array(main).keys()]), hand: 7, freeMull });
     if (!r.before) throw new Error('The deck did not reach the room. Try again.');
     if (saveAs) {
       const old = myDecks.find(d => d.name === saveAs);
@@ -1416,6 +1439,77 @@ async function loadMyDeck(input, saveAs = '') {
     st.textContent = err.message || 'Something went wrong loading the deck.';
   } finally { $('#deck-load').disabled = false; }
 }
+
+// Dialog: which of these cards are your commanders (one or more). Resolves to the chosen deck lines.
+function pickCommanders(cands) {
+  return new Promise(resolve => {
+    const pick = new Set(cands.filter(c => c.section === 'commander'));
+    const list = [...cands].sort((a, b) => pick.has(b) - pick.has(a));
+    const draw = () => {
+      $('#cmd-grid').innerHTML = list.length ? list.map((c, i) => { const d = db[c.ref];
+        return `<button class="cmd-opt ${pick.has(c) ? 'on' : ''}" data-i="${i}"><img src="${d.img || ''}" alt=""><span>${esc(d.name)}</span></button>`; }).join('')
+        : '<p class="drawer-sub">No legendary creatures found in this list.</p>';
+      $('#cmd-ok').textContent = pick.size ? `Confirm ${pick.size} commander${pick.size > 1 ? 's' : ''}` : 'Play without a commander';
+    };
+    const close = v => { $('#cmd-pick').classList.remove('on'); $('#cmd-pick').onclick = null; resolve(v); };
+    $('#cmd-pick').onclick = e => {
+      const o = e.target.closest('.cmd-opt');
+      if (o) { const c = list[+o.dataset.i]; pick.has(c) ? pick.delete(c) : pick.add(c); draw(); }
+      else if (e.target.closest('#cmd-ok')) close(pick);
+      else if (e.target.closest('#cmd-none')) close(new Set());
+    };
+    draw();
+    $('#cmd-pick').classList.add('on');
+  });
+}
+
+/* ----- commander deaths, shown next to the board title ----- */
+function renderCmdDeaths(s, seatId, mine) {
+  const cmds = Object.values(s.cards).filter(c => c.commander && c.owner === seatId);
+  const html = cmds.map(c => `<span class="cd" title="Times ${esc(c.name)} has died">
+      <span class="nm">${esc(c.name.split(',')[0])}</span><span class="sk">☠</span><b>${c.deaths || 0}</b>
+      ${mine ? `<button class="step sm" data-cd="${c.id}" data-d="-1">−</button><button class="step sm" data-cd="${c.id}" data-d="1">+</button>` : ''}</span>`).join('');
+  if ($('#cmd-deaths').innerHTML !== html) $('#cmd-deaths').innerHTML = html;
+}
+$('#cmd-deaths').addEventListener('click', e => {
+  const b = e.target.closest('[data-cd]');
+  if (b && state) dispatch({ t: 'CMD_DEATH', id: +b.dataset.cd, d: +b.dataset.d });
+});
+
+/* ----- opening hand: keep, or mulligan (London: draw 7, put one on the bottom per mulligan) ----- */
+let mullPick = null;           // cards chosen to go to the bottom, while keeping
+function mullBottom(seat) { return Math.min(7, Math.max(0, (seat.mull || 0) - (seat.freeMull ? 1 : 0))); }
+function renderMull(s) {
+  const seat = s.seats?.[mySeat()];
+  const show = viewSeat === mySeat() && !!seat?.deckName && seat.kept === false;
+  if (!show) mullPick = null;
+  $('#mull-bar').hidden = !show;
+  if (!show) return;
+  const n = mullBottom(seat);
+  const html = mullPick
+    ? `<span>Click ${n} card${n > 1 ? 's' : ''} in your hand to put on the bottom <b>${mullPick.size}/${n}</b></span>
+       <button class="chip gold" data-mull="confirm" ${mullPick.size === n ? '' : 'disabled'}>Put on the bottom and keep</button><button class="chip" data-mull="back">Back</button>`
+    : `<span><b>Opening hand.</b> ${seat.mull ? `Mulligans: ${seat.mull}${seat.freeMull ? ' (the first is free)' : ''}. Keeping puts ${n} card${n === 1 ? '' : 's'} on the bottom.` : 'Keep these 7, or mulligan for a new 7.'}</span>
+       <button class="chip gold" data-mull="keep">Keep</button><button class="chip" data-mull="mull">Mulligan</button>`;
+  if ($('#mull-bar').innerHTML !== html) $('#mull-bar').innerHTML = html;
+}
+function mulligan() {
+  const me = mySeat(), seat = state.seats?.[me];
+  if (!seat?.deckName) return;
+  mullPick = null;
+  dispatch({ t: 'SEAT_MULLIGAN', seat: me, order: shuffle([...seat.zones.library, ...seat.zones.hand]), n: 7 });
+}
+$('#mull-bar').addEventListener('click', e => {
+  const b = e.target.closest('[data-mull]');
+  if (!b || !state) return;
+  const me = mySeat(), seat = state.seats?.[me];
+  if (!seat) return;
+  const a = b.dataset.mull;
+  if (a === 'mull') mulligan();
+  else if (a === 'keep') { if (mullBottom(seat)) { mullPick = new Set(); renderAll(state); } else dispatch({ t: 'SEAT_KEEP', seat: me, ids: [] }); }
+  else if (a === 'back') { mullPick = null; renderAll(state); }
+  else if (a === 'confirm' && mullPick) { const ids = [...mullPick]; mullPick = null; dispatch({ t: 'SEAT_KEEP', seat: me, ids }); }
+});
 
 /* =================== zoom preview =================== */
 let zoomFor = null, zoomTimer = 0;
@@ -1433,7 +1527,7 @@ function showZoom(t) {
   const id = cardIdOf(t);
   const c = state?.cards[id];
   if (!c) return;
-  const d = db[c.ref] || {};
+  const d = face(db, c);
   const z = $('#zoom');
   const img = z.querySelector('img');
   if (d.large || d.img) img.src = d.large || d.img; else img.removeAttribute('src');
@@ -1451,6 +1545,10 @@ function showZoom(t) {
     else tags.push('<span class="tag">Haste</span>');
   }
   if (c.flashback) tags.push('<span class="tag">Recast from graveyard</span>');
+  if (db[c.ref]?.back) tags.push(`<span class="tag hot">Double-faced · F to transform${c.flipped ? ' back' : ''}</span>`);
+  if (isWalker(db, c) && zone === 'battlefield') tags.push(`<span class="tag hot">Loyalty ${(parseInt(d.loyalty) || 0) + (c.loy || 0)}</span>`);
+  if (c.marks) tags.push(`<span class="tag">${c.marks} counter${c.marks > 1 ? 's' : ''}</span>`);
+  if (c.commander && c.deaths) tags.push(`<span class="tag">Died ${c.deaths}×</span>`);
   z.querySelector('.zoom-info').innerHTML = `<h4>${esc(d.name || c.name)} <span class="t">${esc(d.cost || '')}</span></h4><div class="t">${esc(d.type || '')}</div>${d.text ? `<div class="o">${esc(d.text)}</div>` : ''}<div class="tags">${tags.join('')}</div>`;
   const r = t.getBoundingClientRect();
   z.classList.toggle('left', r.left + r.width / 2 > innerWidth * 0.58);
@@ -1521,6 +1619,12 @@ document.addEventListener('pointerup', e => {
   clearTimeout(d.lp);
   if (!d.started) {
     if (d.zoomed) { hideZoom(); return; }
+    if (mullPick && d.card.parentElement?.id === 'seat-hand') {          // choosing cards for the bottom
+      const id = d.card._ids[0], n = mullBottom(state.seats[mySeat()]);
+      if (mullPick.has(id)) mullPick.delete(id); else if (mullPick.size < n) mullPick.add(id);
+      renderAll(state);
+      return;
+    }
     if (!e.target.closest('.act')) openCardMenu(d.card, e.clientX, e.clientY);
     return;
   }
@@ -1579,8 +1683,14 @@ function letterKey(k, e) {
       case 'p': if (c.owner && (zone === 'hand' || zone === 'command')) { castIds([id]); return true; } break;
       case 'a': if (c.owner && c.creature && zone === 'battlefield' && state.phase === 'survivors') { dispatch({ t: 'ATTACK', ids: [id], v: !c.attacking }, false); return true; } break;
       case 'b': if (!c.owner && c.attacking && state.phase === 'combat') { const r = el.getBoundingClientRect(); chooseBlocker(id, r.left + r.width / 2, r.top + r.height / 2); return true; } break;
-      case '+': case '=': if (c.creature && zone === 'battlefield') { dispatch({ t: 'COUNTER', ids: [id], d: 1 }); return true; } break;
-      case '-': if (c.creature && zone === 'battlefield') { dispatch({ t: 'COUNTER', ids: [id], d: -1 }); return true; } break;
+      case 'f': if (db[c.ref]?.back) { dispatch({ t: 'FLIP', ids: [id] }); return true; } break;
+      case '+': case '=': case '-': {
+        if (!['battlefield', 'exile'].includes(zone)) break;
+        const d = k === '-' ? -1 : 1;
+        const kind = zone !== 'battlefield' ? 'generic' : isWalker(db, c) ? 'loyalty' : c.creature ? undefined : 'generic';
+        dispatch({ t: 'COUNTER', ids: [id], d, ...(kind ? { kind } : {}) });
+        return true;
+      }
     }
   }
   const me = mySeat();

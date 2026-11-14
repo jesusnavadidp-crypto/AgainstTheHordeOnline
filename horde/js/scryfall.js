@@ -1,5 +1,6 @@
 // Card data from Scryfall (https://scryfall.com/docs/api), cached in localStorage.
-const KEY = 'horde.scryfall.v2'; // v2: adds `parts` (tokens a card makes)
+const KEY = 'horde.scryfall.v3'; // v3: back faces of double-faced cards, loyalty
+try { localStorage.removeItem('horde.scryfall.v2'); } catch {}
 export const db = (() => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch { return {}; } })();
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(db)); } catch {} };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -7,10 +8,18 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 export function slim(c) {
   const f0 = c.card_faces?.[0] || {};
   const iu = c.image_uris || f0.image_uris || {};
+  // Double-faced cards (transform, modal, meld) have an image per face; the back is kept apart.
+  const f1 = c.card_faces?.[1];
+  const back = !c.image_uris && f1?.image_uris ? {
+    name: f1.name, type: f1.type_line || '', text: f1.oracle_text || '', cost: f1.mana_cost || '',
+    power: f1.power ?? null, toughness: f1.toughness ?? null, loyalty: f1.loyalty ?? null,
+    img: f1.image_uris.normal || null, large: f1.image_uris.large || f1.image_uris.normal || null, art: f1.image_uris.art_crop || null,
+  } : null;
   return {
-    id: c.id, name: c.name,
-    type: c.type_line || f0.type_line || '',
-    text: c.oracle_text ?? (c.card_faces || []).map(f => `${f.name}\n${f.oracle_text || ''}`).join('\n\n'),
+    id: c.id, name: c.name, back,
+    loyalty: c.loyalty ?? f0.loyalty ?? null,
+    type: (back ? f0.type_line : c.type_line) || f0.type_line || '',
+    text: back ? f0.oracle_text || '' : c.oracle_text ?? (c.card_faces || []).map(f => `${f.name}\n${f.oracle_text || ''}`).join('\n\n'),
     cost: c.mana_cost ?? f0.mana_cost ?? '',
     power: c.power ?? f0.power ?? null,
     toughness: c.toughness ?? f0.toughness ?? null,

@@ -88,6 +88,7 @@ function names(s, ids) {
 function put(s, id, to, pos) {
   const c = s.cards[id];
   const from = detach(s, id);
+  if (from !== to) { c.loy = 0; c.marks = 0; c.flipped = false; }
   if (to !== 'battlefield') {
     // Leaving the battlefield: it falls off what it was attached to, and what was attached to it
     // falls off too (Auras go to the graveyard with it, Equipment stays).
@@ -294,7 +295,42 @@ export function reduce(s0, a) {
       break;
     }
     case 'TAP': for (const id of a.ids) if (s.cards[id]) s.cards[id].tapped = a.v; break;
-    case 'COUNTER': for (const id of a.ids) if (s.cards[id]) s.cards[id].counters += a.d; break;
+    case 'COUNTER': {
+      // kind: '+1/+1' counters (default), 'loyalty' (planeswalkers) or 'generic' (any card).
+      for (const id of a.ids) {
+        const c = s.cards[id];
+        if (!c) continue;
+        if (a.kind === 'loyalty') c.loy = (c.loy || 0) + a.d;
+        else if (a.kind === 'generic') c.marks = Math.max(0, (c.marks || 0) + a.d);
+        else c.counters += a.d;
+      }
+      break;
+    }
+    case 'FLIP': {
+      // Double-faced cards: show the other face.
+      const ids = [...new Set(a.ids || [])].filter(id => s.cards[id]);
+      for (const id of ids) s.cards[id].flipped = !s.cards[id].flipped;
+      if (ids.length) log(s, `${names(s, ids)} transformed.`);
+      break;
+    }
+    case 'CMD_DEATH': {
+      // How many times a commander has died (or left for the command zone).
+      const c = s.cards[a.id];
+      if (!c?.commander) break;
+      c.deaths = Math.max(0, (c.deaths || 0) + a.d);
+      log(s, `${c.name} has died ${c.deaths} time${c.deaths === 1 ? '' : 's'}.`);
+      break;
+    }
+    case 'SEAT_KEEP': {
+      // Keep the opening hand, putting `ids` (from the hand) on the bottom of the library.
+      const seat = seatOf(s, a.seat);
+      if (!seat) break;
+      const ids = [...new Set(a.ids || [])].filter(id => seat.zones.hand.includes(id));
+      for (const id of ids) put(s, id, 'library', 'bottom');
+      seat.kept = true;
+      log(s, `${seat.name} keeps ${seat.zones.hand.length}${ids.length ? ` (${ids.length} on the bottom)` : ''}.`);
+      break;
+    }
     case 'CREATE': {
       const owner = a.owner && seatOf(s, a.owner) ? a.owner : undefined;
       const bf = owner ? s.seats[owner].zones.battlefield : z.battlefield;
@@ -332,6 +368,7 @@ export function reduce(s0, a) {
       }
       seat.zones.library = samePerm(a.order, main.map((_, i) => i)) ? a.order.map(i => main[i]) : main;
       seat.deckName = a.deckName || 'Deck';
+      seat.mull = 0; seat.kept = false; seat.freeMull = !!a.freeMull;   // opening hand: keep or mulligan
       const drew = seatDraw(s, a.seat, a.hand ?? 7);
       log(s, `${seat.name} brings ${seat.deckName} (${main.length} cards${seat.zones.command.length ? ', commander: ' + names(s, seat.zones.command) : ''}) and draws ${drew}.`);
       break;
@@ -345,7 +382,7 @@ export function reduce(s0, a) {
     case 'SEAT_SHUFFLE': {
       const seat = seatOf(s, a.seat);
       if (!seat || !samePerm(a.order, seat.zones.library)) break;
-      seat.zones.library = a.order;
+      seat.zones.library = [...a.order];
       log(s, `${seat.name} shuffles their library.`);
       break;
     }
@@ -356,9 +393,10 @@ export function reduce(s0, a) {
       const lib = [...seat.zones.library, ...seat.zones.hand];
       if (!samePerm(a.order, lib)) break;
       seat.zones.hand = [];
-      seat.zones.library = a.order;
+      seat.zones.library = [...a.order];
       seatDraw(s, a.seat, a.n ?? 7);
-      log(s, `${seat.name} mulligans to ${a.n ?? 7}.`);
+      seat.mull = (seat.mull || 0) + 1; seat.kept = false;
+      log(s, `${seat.name} mulligans (${seat.mull}).`);
       break;
     }
     case 'UNTAP_ALL': {
@@ -386,7 +424,7 @@ export function reduce(s0, a) {
       if (ids.some(id => homeOf(s, s.cards[id]) !== zs)) break;
       const label = names(s, ids), owner = s.cards[ids[0]].owner;
       for (const id of ids) put(s, id, 'library', 'bottom');
-      if (samePerm(a.order, zs.library)) zs.library = a.order;
+      if (samePerm(a.order, zs.library)) zs.library = [...a.order];
       log(s, `${label} shuffled from ${owner ? seatName(s, owner) + "'s" : 'the Horde\'s'} graveyard into the library.`);
       break;
     }
@@ -407,15 +445,6 @@ export function reduce(s0, a) {
       log(s, `${c.name} attached to ${h.name}.`);
       break;
     }
-    case 'COMMANDER': {
-      // A Survivor marks one of their own cards as their commander: it goes to the command zone.
-      const c = s.cards[a.id];
-      if (!c || c.owner !== a.seat || !seatOf(s, a.seat)) break;
-      c.commander = true;
-      put(s, c.id, 'command');
-      log(s, `${c.name} is ${seatName(s, a.seat)}'s commander.`);
-      break;
-    }
     case 'SET_OPT': {
       if (a.k !== 'tokensPersist') break;
       s.opts[a.k] = !!a.v;
@@ -426,7 +455,7 @@ export function reduce(s0, a) {
       // Only accept a reordering of the current library (it may have changed while the shuffle was in flight).
       const key = l => [...l].sort((x, y) => x - y).join();
       if (!Array.isArray(a.order) || key(a.order) !== key(z.library)) break;
-      z.library = a.order; log(s, 'Horde library shuffled.');
+      z.library = [...a.order]; log(s, 'Horde library shuffled.');
       break;
     }
     case 'ANTHEM': s.anthem = a.d !== undefined ? s.anthem + a.d : a.v; break;
