@@ -67,7 +67,10 @@ function renderDecks() {
     + tile('custom', 'Custom list', null, '<b>+</b>');
   if ($('#deck-grid').innerHTML !== html) $('#deck-grid').innerHTML = html;
   const sel = $('#deck-grid .sel');
-  if (sel) { const g = $('#deck-grid'); g.scrollTo({ left: sel.offsetLeft - g.clientWidth / 2 + sel.offsetWidth / 2, behavior: 'smooth' }); }
+  if (sel) {                       // keep the chosen one centred in the strip
+    const g = $('#deck-grid'), gr = g.getBoundingClientRect(), r = sel.getBoundingClientRect();
+    g.scrollTo({ left: g.scrollLeft + (r.left + r.width / 2) - (gr.left + gr.width / 2), behavior: 'smooth' });
+  }
 
   // the big picture, cross-faded
   const d = DECKS.find(x => x.key === selDeck), sv = savedOf(selDeck);

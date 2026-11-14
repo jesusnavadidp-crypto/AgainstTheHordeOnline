@@ -815,3 +815,5 @@ body.dragging #seat-hand .card .tilt { transform: none; }
 }
 .s-online #net-code { width: 130px; letter-spacing: .02em; }
 @media (max-width: 760px) { .s-online { justify-content: flex-start; } .s-name { top: 200px; } .s-stage { padding-top: max(64vh, 440px); } }
+.s-thumbs { margin: 0 0 22px; } .s-name { top: clamp(84px, 11vh, 110px); }
+@media (max-width: 760px) { .s-name { top: 160px; } }
