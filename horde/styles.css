@@ -846,3 +846,9 @@ body.dragging .dock-board .lane-row { display: flex; }
 .dock-board .lane-row > .lane:not(.lane-stolen):not(:has(.card)) { display: none; }
 body.dragging .dock-board .lane-row > .lane { display: block; }
 body.dock-compact .dock-board .lane-row { display: none !important; }
+/* the flip button follows a hand card when it grows on hover: top-left corner of the big card */
+#seat-hand .card.dfc:hover .flipb { display: grid; z-index: 30; width: 34px; height: 34px; font-size: 19px;
+  left: calc(var(--cw) * (1 - var(--hz, 1)) / 2 - 10px);
+  top: calc(var(--cw) * 1.397 * (1 - var(--hz, 1)) - 18px);
+  transition: left .28s var(--ease), top .28s var(--ease); }
+.dock-board .lane-row > .lane-stolen { margin-left: auto; }
