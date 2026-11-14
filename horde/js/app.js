@@ -116,7 +116,8 @@ function showSetup() {
   renderOpts(); renderDecks();
 }
 
-$('#btn-start').addEventListener('click', startGame);
+// One button: create a room with this Horde (or, already in a room, start a new game for it).
+$('#btn-start').addEventListener('click', () => { if (!online) createWith = true; startGame(); });
 $('#btn-continue').addEventListener('click', async () => {
   try {
     const saved = JSON.parse(localStorage.getItem(SAVE));
@@ -320,7 +321,6 @@ function renderRoom() {
   $('#room-players').innerHTML = online.players.map(p =>
     `<span class="pl ${p.online ? '' : 'off'} ${p.id === online.me.id ? 'me' : ''}" title="${esc(p.name)}${p.online ? '' : ' (offline)'}">${esc(p.name.slice(0, 1).toUpperCase())}</span>`).join('');
   $('#btn-start').textContent = 'Start a new game for the room';
-  $('#btn-create-room').hidden = true;
   $('#join-row').hidden = true;
   $('#btn-leave').hidden = false;
   $('#net-in').textContent = `You're in room ${online.room} as ${online.me.name}.`;
@@ -330,8 +330,8 @@ function leaveRoom() {
   if (net) { net.close(); net = null; }
   online = null; dropPending();
   const u = new URL(location.href); u.searchParams.delete('room'); history_.replaceState(null, '', u);
-  $('#btn-start').textContent = 'Start game';
-  $('#btn-create-room').hidden = false; $('#join-row').hidden = false; $('#btn-leave').hidden = true;
+  $('#btn-start').textContent = 'Create room';
+  $('#join-row').hidden = false; $('#btn-leave').hidden = true;
   $('#net-in').textContent = '';
   renderRoom();
   showSetup();
@@ -357,7 +357,6 @@ function launch(s) {
   beginWith(s);
 }
 
-$('#btn-create-room').addEventListener('click', () => { createWith = true; startGame(); });
 $('#btn-join').addEventListener('click', () => joinRoom($('#net-code').value));
 $('#net-code').addEventListener('keydown', e => { if (e.key === 'Enter') joinRoom($('#net-code').value); });
 $('#btn-leave').addEventListener('click', () => { if (confirm('Leave this room? The game keeps going for the others.')) leaveRoom(); });

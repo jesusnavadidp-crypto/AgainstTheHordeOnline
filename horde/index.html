@@ -228,11 +228,10 @@ or
     <p class="lead">Cooperative Magic for 1–4 Survivors against an automated Horde. Pick a Horde, set the difficulty, and survive.</p>
     <button class="ghost-btn" id="btn-continue" hidden>Continue saved game</button>
     <section class="online" id="online-box">
-      <div class="online-head"><b>Play online</b><span>Everyone in a room sees and controls the same table.</span></div>
+      <div class="online-head"><b>Play online</b><span>Join a friend's room with its code, or pick a Horde below and create your own room. Everyone in a room sees and controls the same table.</span></div>
       <div class="online-row">
         <input id="net-name" maxlength="24" placeholder="Your name" autocomplete="nickname">
-        <button class="ghost-btn" id="btn-create-room" title="Uses the Horde and options chosen below">Create a room</button>
-        <span class="join" id="join-row"><input id="net-code" maxlength="8" placeholder="Room code" autocapitalize="characters"><button class="ghost-btn" id="btn-join">Join</button></span>
+        <span class="join" id="join-row"><input id="net-code" maxlength="8" placeholder="Room code" autocapitalize="characters"><button class="primary big" id="btn-join">Join room</button></span>
         <button class="ghost-btn" id="btn-leave" hidden>Leave room</button>
       </div>
       <p class="online-msg"><span id="net-in"></span> <span id="net-msg"></span></p>
@@ -249,7 +248,7 @@ Also accepts the against-the-horde.com export format."></textarea>
     </div>
     <div class="opts" id="opts"></div>
     <p class="special" id="setup-rules"></p>
-    <div class="setup-go"><span id="setup-status"></span><button class="primary big" id="btn-start">Start game</button></div>
+    <div class="setup-go"><span id="setup-status"></span><button class="primary big" id="btn-start" title="Uses the Horde and options chosen above">Create room</button></div>
     <p class="legal">Unofficial Fan Content permitted under the Fan Content Policy. Not approved/endorsed by Wizards. Portions of the materials used are property of Wizards of the Coast. ©Wizards of the Coast LLC. Card data and images via Scryfall. Horde decks from against-the-horde.com (Peter Knudson, TenkayCrit).</p>
   </div>
 </div>

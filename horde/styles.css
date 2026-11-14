@@ -676,3 +676,11 @@ body.dragging #seat-hand .card .tilt { transform: none; }
 .top-dmg #hlife-num { font-size: 16px; color: #ffd2cc; min-width: 22px; text-align: center; }
 #hlife-box.shake { animation: shake .4s; }
 .strike-copy .acts, .strike-copy .flipb { display: none !important; }
+
+/* setup: Join room and Create room share the main button style */
+.online-row { align-items: stretch; }
+.online-row input { padding: 12px 14px; font-size: 15px; }
+.online-row .join { gap: 8px; }
+.online-row .primary.big { padding: 12px 30px; }
+.online-row .join[hidden] { display: none; }
+.online-row #net-code { width: 170px; text-transform: uppercase; }
